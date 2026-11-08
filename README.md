@@ -32,7 +32,7 @@ Craft it (1 craft makes 9):
 
 ## The bazaar screen (press B)
 
-Press **B** in game. To change the key, click **Key: B** next to the tabs (or Options > Controls > Key Binds > Bazaar Tooltips). It opens on the tab you
+Press **B** in game. To change the key, click the gear (⚙) next to Rounded, then the key button (or Options > Controls > Key Binds > Bazaar Tooltips). It opens on the tab you
 used last. Tabs along the top (they wrap onto two rows): **Crafts**, **Flipper**, **NPC**, **Forge**, **Prices**, **Books**,
 **Minions**, **Profit/hr**, **Essence**, **Currency**, **Orders** (ports of your website's tabs:
 same data, same math, checked against the site's own script number for number). Your coins, free slots,
@@ -192,12 +192,12 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.11.0.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.11.1.jar`.
 
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.11.0.jar`
+- `bazaar-tooltips-0.11.1.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
