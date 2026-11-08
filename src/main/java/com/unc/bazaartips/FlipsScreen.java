@@ -55,6 +55,10 @@ public class FlipsScreen extends TableScreen<CraftEngine.Craft> {
 						c -> Format.signedShortCoins(c.profitSellOffer()), c -> Colors.profit(c.profitSellOffer())),
 				new Column<>("Insta-sell", "Insta-sell: profit per craft if you sell the result into the top buy order, after tax.",
 						c -> Format.signedShortCoins(c.profitInstaSell()), c -> Colors.profit(c.profitInstaSell())),
+				new Column<>("Offer %", "Offer %: the sell-offer profit as a % of what the ingredients cost (the site's sell-order margin).",
+						c -> String.format(java.util.Locale.US, "%.1f%%", c.marginSellOffer()), c -> Colors.profit(c.marginSellOffer())),
+				new Column<>("Insta %", "Insta %: the insta-sell profit as a % of what the ingredients cost (the site's insta-sell margin).",
+						c -> String.format(java.util.Locale.US, "%.1f%%", c.marginInstaSell()), c -> Colors.profit(c.marginInstaSell())),
 				new Column<>("Vol/wk", "Vol/wk: how many of the result traded in the last 7 days (the lower of insta-bought and insta-sold). Under 10k is low volume.",
 						c -> Format.amount(c.volume()), c -> c.volume() >= CraftEngine.LOW_VOLUME ? Colors.GRAY : Colors.RED)));
 		if (sized()) {
@@ -139,6 +143,8 @@ public class FlipsScreen extends TableScreen<CraftEngine.Craft> {
 			case "Cost" -> "cost";
 			case "Sell offer" -> "profitSellOrder";
 			case "Insta-sell" -> "profitInstaSell";
+			case "Offer %" -> "marginSellOrder";
+			case "Insta %" -> "marginInstaSell";
 			case "Best" -> Settings.sort.startsWith("best") ? Settings.sort : "best";
 			default -> null;
 		};
