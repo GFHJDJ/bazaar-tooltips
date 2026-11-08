@@ -1,0 +1,44 @@
+# Builds the mod on every push. On the main branch it also publishes the jar on the repo's Releases page
+# (one release per version in gradle.properties; pushing again with the same version replaces the jar).
+
+name: build
+on: [pull_request, push, workflow_dispatch]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: build
+        run: ./gradlew build
+      - name: capture build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: Artifacts
+          path: build/libs/
+      - name: publish the jar on the Releases page
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(grep '^version=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')
+          JAR=$(ls build/libs/*.jar | grep -v -- '-sources' | head -n 1)
+          NOTES="Download the .jar below and put it in your Minecraft 26.2 mods folder, together with Fabric API for 26.2."
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            gh release upload "v$VERSION" "$JAR" --clobber
+          else
+            gh release create "v$VERSION" "$JAR" --title "Bazaar Tooltips $VERSION" --notes "$NOTES" --latest
+          fi

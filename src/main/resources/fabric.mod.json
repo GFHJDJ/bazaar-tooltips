@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "bazaartips",
+	"version": "${version}",
+	"name": "Bazaar Tooltips",
+	"description": "Shows live Hypixel Skyblock bazaar prices in item tooltips.",
+	"authors": ["Unc"],
+	"license": "CC0-1.0",
+	"icon": "assets/bazaartips/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["com.unc.bazaartips.BazaarTooltipsClient"]
+	},
+	"depends": {
+		"fabricloader": ">=0.20.1",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
