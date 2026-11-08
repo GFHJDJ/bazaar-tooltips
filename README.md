@@ -176,6 +176,24 @@ your orders, the ones that need you first at the top: Outbid / Undercut, Tied (s
 Filled (claim it), Top. Hover one for the price to re-place it at. **Alerts** turns the chat messages on or
 off; **Forget orders** clears the list. Reopen Manage Orders after you change orders so the list stays right.
 
+## Panel in the bazaar
+
+Open any item in /bz and a panel appears beside the chest: insta-buy / insta-sell, weekly volume and
+warnings; the flip (buy order and sell offer prices, profit each, trades per hour, flip score); crafting it
+(cost and profit, by insta-buy and by buy orders); what an NPC pays; and your own orders on that item with
+their status. It needs room beside the chest; if it doesn't show, try a smaller GUI scale.
+
+## Orders box on your screen
+
+A small box (top left by default) lists your bazaar orders with their status: Top, Tied, Outbid / Undercut
+(red, with the price that beat you), Filled. The header says how many are outbid. It shows once you've
+opened Manage Orders.
+
+## Settings (the gear)
+
+The ⚙ next to Rounded: the open-screen key, the bazaar panel on/off, the orders box on/off and where it
+sits (top left, top right, middle left), and outbid chat alerts on/off.
+
 ## What it connects to
 
 Only public data: Hypixel's bazaar and item list, your site's unlock lookup (only when you press Load),
@@ -192,12 +210,12 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.11.1.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.12.0.jar`.
 
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.11.1.jar`
+- `bazaar-tooltips-0.12.0.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
@@ -219,6 +237,8 @@ Open the folder in IntelliJ IDEA, let it import, then run the Gradle task `runCl
 - `MinionEngine.java` - the Minions and Profit / hr math. `EssenceEngine.java` - the Essence math.
 - `AhPrices.java` - AH lowest BINs. `MoneyData.java` - builds the three tabs' lists. `MoneyReport.java` - their details lines.
 - `OrderTracker.java` + `OrdersScreen.java` - your bazaar orders and outbid alerts.
+- `Overlays.java` + `ProductSummary.java` - the panel in the bazaar and the orders box on your screen.
+- `SettingsScreen.java` - the gear's settings.
 - `Settings.java` - your saved settings. `UnlockLookup.java` - My unlocks.
 - `FlipsScreen.java`, `FlipDetailScreen.java`, `SortScreen.java`, `FiltersScreen.java`, `BaseScreen.java`,
   `TableScreen.java`, `FlipperScreen.java`, `MoneyScreen.java`, `ReportScreen.java`, `FlipperDetailScreen.java`,

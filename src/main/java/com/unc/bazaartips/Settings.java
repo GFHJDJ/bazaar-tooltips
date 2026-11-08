@@ -117,6 +117,10 @@ public final class Settings {
 	public static String curType = "copper";
 	/** Chat alert when one of your bazaar orders is outbid or undercut. */
 	public static boolean orderAlerts = true;
+	/** The panel beside a bazaar item's page, and the orders box on your screen (and which corner it sits in). */
+	public static boolean bazaarOverlay = true;
+	public static boolean orderHud = true;
+	public static String orderHudCorner = "top-left";
 
 	private static Path file;
 
@@ -181,6 +185,9 @@ public final class Settings {
 				if (o.has(k)) Settings.class.getField(k).set(null, o.get(k).getAsString());
 			}
 			if (o.has("orderAlerts")) orderAlerts = o.get("orderAlerts").getAsBoolean();
+			if (o.has("bazaarOverlay")) bazaarOverlay = o.get("bazaarOverlay").getAsBoolean();
+			if (o.has("orderHud")) orderHud = o.get("orderHud").getAsBoolean();
+			orderHudCorner = str(o, "orderHudCorner", orderHudCorner, "top-left", "top-right", "middle-left");
 			if (o.has("profitTier")) profitTier = Math.max(1, Math.min(12, o.get("profitTier").getAsInt()));
 			if (o.has("profitAuto")) profitAuto = o.get("profitAuto").getAsBoolean();
 			if (o.has("essenceSellOffer")) essenceSellOffer = o.get("essenceSellOffer").getAsBoolean();
@@ -242,6 +249,9 @@ public final class Settings {
 				o.addProperty(k, (String) Settings.class.getField(k).get(null));
 			}
 			o.addProperty("orderAlerts", orderAlerts);
+			o.addProperty("bazaarOverlay", bazaarOverlay);
+			o.addProperty("orderHud", orderHud);
+			o.addProperty("orderHudCorner", orderHudCorner);
 			o.addProperty("profitTier", profitTier);
 			o.addProperty("profitAuto", profitAuto);
 			o.addProperty("essenceSellOffer", essenceSellOffer);
