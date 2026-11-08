@@ -18,6 +18,11 @@ import net.minecraft.world.item.component.CustomData;
 import java.util.List;
 
 public class BazaarTooltipsClient implements ClientModInitializer {
+	/** The key that opens the bazaar screen (B unless you change it), in its own "Bazaar Tooltips" section of Key Binds. */
+	static KeyMapping openKey;
+	private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
+			net.minecraft.resources.Identifier.fromNamespaceAndPath("bazaartips", "main"));
+
 	/** Show a warning on the tooltip once prices are older than this. */
 	private static final long STALE_AFTER_MILLIS = 3 * 60 * 1000;
 
@@ -35,9 +40,11 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		BazaarPrices.start();
 		ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> addPriceLines(stack, lines));
 
-		// B opens the bazaar screen on the tab you used last. Rebind it in Options > Controls > Key Binds > Miscellaneous.
+		// B opens the bazaar screen on the tab you used last. Rebind it in Options > Controls > Key Binds > Bazaar Tooltips
+		// (or the Key button on the screen).
 		KeyMapping openFlips = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-				"key.bazaartips.open_flips", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, KeyMapping.Category.MISC));
+				"key.bazaartips.open_flips", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, CATEGORY));
+		openKey = openFlips;
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			while (openFlips.consumeClick()) {
 				if (client.player != null) client.gui.setScreen(BaseScreen.screenFor(Settings.tab));

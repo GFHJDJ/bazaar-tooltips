@@ -1,5 +1,6 @@
 package com.unc.bazaartips;
 
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -76,7 +77,21 @@ abstract class BaseScreen extends Screen {
 			tabPos[i] = new int[] {x, y, w};
 			x += w + 2;
 		}
+		// then the Key button (opens Minecraft's Key Binds so you can change the key)
+		int kw = font.width(keyLabel()) + 12;
+		if (x + kw > right && x > left) {
+			x = left;
+			y += 16;
+		}
+		keyPos = new int[] {x, y, kw};
 		tabsBottom = y + 14;
+	}
+
+	private int[] keyPos = {0, 0, 0};
+
+	private static String keyLabel() {
+		KeyMapping k = BazaarTooltipsClient.openKey;
+		return "Key: " + (k == null ? "B" : k.getTranslatedKeyMessage().getString());
 	}
 
 	/** Where the tabs end (the page starts a little below). */
@@ -98,6 +113,9 @@ abstract class BaseScreen extends Screen {
 			}).pos(tabPos[i][0], tabPos[i][1]).size(tabPos[i][2], 14).build());
 			if (key.equals(current)) b.active = false;
 		}
+		addRenderableWidget(Button.builder(Component.literal(keyLabel()), btn -> minecraft.gui.setScreen(
+				new net.minecraft.client.gui.screens.options.controls.KeyBindsScreen(this, minecraft.options)))
+				.pos(keyPos[0], keyPos[1]).size(keyPos[2], 14).build());
 	}
 
 	/** The tabs' explanations and the underline under the current one; call each frame after explain.clear(). */
@@ -107,6 +125,8 @@ abstract class BaseScreen extends Screen {
 			explain.add(x, y, x + w, y + 14, TABS[i][2] + (TABS[i][0].equals(currentTab) ? " (You're here.)" : " Click to switch."));
 			if (TABS[i][0].equals(currentTab)) graphics.fill(x, y + 14, x + w, y + 15, Colors.GOLD);
 		}
+		explain.add(keyPos[0], keyPos[1], keyPos[0] + keyPos[2], keyPos[1] + 14, "The key that opens this screen (" + keyLabel().substring(5)
+				+ "). Click to open Minecraft's Key Binds and change it: it's under Bazaar Tooltips. (Also in Options > Controls > Key Binds.)");
 	}
 
 	protected void addRoundedToggle(int y, Runnable afterChange) {
