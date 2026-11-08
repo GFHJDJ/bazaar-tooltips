@@ -40,7 +40,8 @@ abstract class BaseScreen extends Screen {
 			{"minions", "Minions", "Minions: what each minion costs to build, tier by tier, by insta-buy or buy order."},
 			{"profit", "Profit/hr", "Profit / hr: coins per hour from each minion's drops, with fuel, upgrades and hoppers."},
 			{"essence", "Essence", "Essence: buy the cheapest AH listing, salvage it (or sacrifice it), sell the essence."},
-			{"cur", "Currency", "Currencies: what to buy with copper, medals, pelts, North Stars and more, ranked by coins per one."}};
+			{"cur", "Currency", "Currencies: what to buy with copper, medals, pelts, North Stars and more, ranked by coins per one."},
+			{"orders", "Orders", "Your bazaar orders (read when you open Manage Orders) and whether each is still on top. Chat alerts when one is outbid."}};
 
 	/** The list screen for a tab. */
 	static Screen screenFor(String tab) {
@@ -54,6 +55,7 @@ abstract class BaseScreen extends Screen {
 			case "minions" -> new MinionScreen();
 			case "profit" -> new ProfitScreen();
 			case "essence" -> new EssenceScreen();
+			case "orders" -> new OrdersScreen();
 			default -> new FlipsScreen();
 		};
 	}

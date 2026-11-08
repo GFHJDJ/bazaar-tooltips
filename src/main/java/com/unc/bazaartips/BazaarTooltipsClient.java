@@ -32,6 +32,7 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		Recipes.load();
 		SiteData.load();
 		CoflData.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-history.json"));
+		OrderTracker.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-orders.json"));
 		// After each price update, build the list the flips screen will show (on the download thread, so opening it is instant).
 		BazaarPrices.afterRefresh = () -> {
 			CraftEngine.current().crafts(Settings.buy == Settings.Buy.ORDER, Settings.chains != Settings.Chains.EXCLUDE);
@@ -46,10 +47,64 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 				"key.bazaartips.open_flips", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, CATEGORY));
 		openKey = openFlips;
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			readOrders(client);
+			alertOrders(client);
 			while (openFlips.consumeClick()) {
 				if (client.player != null) client.gui.setScreen(BaseScreen.screenFor(Settings.tab));
 			}
 		});
+	}
+
+	// ---- the order tracker: read Manage Orders, alert when outbid ----
+
+	private static int ordersOpenTicks = 0;
+	private static long lastOrderCheck = -1;
+
+	/** While "Your Bazaar Orders" is open, reads your orders off it twice a second. */
+	private static void readOrders(net.minecraft.client.Minecraft client) {
+		net.minecraft.client.gui.screens.Screen screen = client.gui.screen();
+		if (!(screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> c)
+				|| !OrderTracker.isOrdersTitle(c.getTitle().getString())) {
+			ordersOpenTicks = 0;
+			return;
+		}
+		ordersOpenTicks++;
+		if (ordersOpenTicks % 10 != 0) return;
+		String player = client.player == null ? "" : client.player.getGameProfile().name();
+		List<OrderTracker.Order> found = new java.util.ArrayList<>();
+		long now = System.currentTimeMillis();
+		for (net.minecraft.world.inventory.Slot slot : c.getMenu().slots) {
+			ItemStack stack = slot.getItem();
+			if (stack.isEmpty()) continue;
+			String name = stack.getHoverName().getString();
+			if (!OrderTracker.looksLikeOrder(name)) continue;
+			List<String> lines = new java.util.ArrayList<>();
+			net.minecraft.world.item.component.ItemLore lore = stack.get(DataComponents.LORE);
+			if (lore != null) for (Component l : lore.lines()) lines.add(l.getString());
+			OrderTracker.Order o = OrderTracker.parse(name, lines, player, now);
+			if (o != null) found.add(o);
+		}
+		if (found.isEmpty() && ordersOpenTicks < 40) return; // the items may not have arrived yet
+		OrderTracker.replace(found);
+	}
+
+	/** After each price refresh, one chat line per order that has just been outbid or undercut. */
+	private static void alertOrders(net.minecraft.client.Minecraft client) {
+		long t = BazaarPrices.lastFetchMillis();
+		if (t == lastOrderCheck || t == 0 || client.player == null) return;
+		lastOrderCheck = t;
+		List<OrderTracker.Check> hits = OrderTracker.newlyOutbid(BazaarPrices::get);
+		if (!Settings.orderAlerts) return;
+		for (OrderTracker.Check c : hits) {
+			String[] text = OrderTracker.alertText(c);
+			String bz = "/bz " + c.order().name();
+			client.player.sendSystemMessage(Component.literal("[Bazaar Tooltips] ").withStyle(ChatFormatting.GOLD)
+					.append(Component.literal(text[0]).withStyle(ChatFormatting.RED))
+					.append(Component.literal(text[1]).withStyle(ChatFormatting.GRAY))
+					.append(Component.literal(" [/bz]").withStyle(ChatFormatting.AQUA).withStyle(s -> s
+							.withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand(bz))
+							.withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.literal("Open the bazaar for " + c.order().name()))))));
+		}
 	}
 
 	private static void addPriceLines(ItemStack stack, List<Component> lines) {

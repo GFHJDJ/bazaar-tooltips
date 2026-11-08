@@ -115,6 +115,8 @@ public final class Settings {
 	public static boolean essenceProfitableOnly = true;
 	/** Currencies: which currency. */
 	public static String curType = "copper";
+	/** Chat alert when one of your bazaar orders is outbid or undercut. */
+	public static boolean orderAlerts = true;
 
 	private static Path file;
 
@@ -173,11 +175,12 @@ public final class Settings {
 			if (o.has("rounded")) Format.setRounded(o.get("rounded").getAsBoolean());
 			if (o.has("lookupName")) lookupName = o.get("lookupName").getAsString();
 			if (o.has("lookupProfile")) lookupProfile = o.get("lookupProfile").getAsString();
-			tab = str(o, "tab", tab, "crafts", "flips", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur");
+			tab = str(o, "tab", tab, "crafts", "flips", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur", "orders");
 			for (String k : new String[] {"pricesSort", "bookSort", "minionSort", "profitSort", "essenceSort", "curSort", "profitSell", "profitFuel",
 					"profitUp1", "profitUp2", "profitHopper", "profitChest", "essenceType", "curType"}) {
 				if (o.has(k)) Settings.class.getField(k).set(null, o.get(k).getAsString());
 			}
+			if (o.has("orderAlerts")) orderAlerts = o.get("orderAlerts").getAsBoolean();
 			if (o.has("profitTier")) profitTier = Math.max(1, Math.min(12, o.get("profitTier").getAsInt()));
 			if (o.has("profitAuto")) profitAuto = o.get("profitAuto").getAsBoolean();
 			if (o.has("essenceSellOffer")) essenceSellOffer = o.get("essenceSellOffer").getAsBoolean();
@@ -238,6 +241,7 @@ public final class Settings {
 					"profitUp1", "profitUp2", "profitHopper", "profitChest", "essenceType", "curType"}) {
 				o.addProperty(k, (String) Settings.class.getField(k).get(null));
 			}
+			o.addProperty("orderAlerts", orderAlerts);
 			o.addProperty("profitTier", profitTier);
 			o.addProperty("profitAuto", profitAuto);
 			o.addProperty("essenceSellOffer", essenceSellOffer);

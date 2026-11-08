@@ -34,7 +34,7 @@ Craft it (1 craft makes 9):
 
 Press **B** in game. To change the key, click **Key: B** next to the tabs (or Options > Controls > Key Binds > Bazaar Tooltips). It opens on the tab you
 used last. Tabs along the top (they wrap onto two rows): **Crafts**, **Flipper**, **NPC**, **Forge**, **Prices**, **Books**,
-**Minions**, **Profit/hr**, **Essence**, **Currency** (ports of your website's tabs:
+**Minions**, **Profit/hr**, **Essence**, **Currency**, **Orders** (ports of your website's tabs:
 same data, same math, checked against the site's own script number for number). Your coins, free slots,
 tax and Rounded setting are shared by every tab.
 
@@ -166,6 +166,16 @@ cheapest auction** line that runs /viewauction for you.
 What to buy with copper, medals, pelts, North Stars, pests, Rusty Coins, Bingo Points, kernels,
 Carnival Tokens or Gems, ranked by coins per one. The **Currency** button switches between them.
 
+## Orders tab and outbid alerts
+
+Open **/bz -> Manage Orders** once: the mod reads your buy orders and sell offers off that screen (only yours,
+not a co-op member's) and remembers them, even after you restart. Every time prices refresh (about once a
+minute) it checks each one against the live order book. When someone beats your buy order or undercuts
+your sell offer, you get one chat message (click **[/bz]** in it to open that item). The **Orders** tab lists
+your orders, the ones that need you first at the top: Outbid / Undercut, Tied (someone has the same price),
+Filled (claim it), Top. Hover one for the price to re-place it at. **Alerts** turns the chat messages on or
+off; **Forget orders** clears the list. Reopen Manage Orders after you change orders so the list stays right.
+
 ## What it connects to
 
 Only public data: Hypixel's bazaar and item list, your site's unlock lookup (only when you press Load),
@@ -182,12 +192,12 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.10.1.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.11.0.jar`.
 
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.10.1.jar`
+- `bazaar-tooltips-0.11.0.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
@@ -208,6 +218,7 @@ Open the folder in IntelliJ IDEA, let it import, then run the Gradle task `runCl
 - `SiteData.java` + `resources/bazaartips/money.json` - the site's forge recipes, NPC shops, NPC locations.
 - `MinionEngine.java` - the Minions and Profit / hr math. `EssenceEngine.java` - the Essence math.
 - `AhPrices.java` - AH lowest BINs. `MoneyData.java` - builds the three tabs' lists. `MoneyReport.java` - their details lines.
+- `OrderTracker.java` + `OrdersScreen.java` - your bazaar orders and outbid alerts.
 - `Settings.java` - your saved settings. `UnlockLookup.java` - My unlocks.
 - `FlipsScreen.java`, `FlipDetailScreen.java`, `SortScreen.java`, `FiltersScreen.java`, `BaseScreen.java`,
   `TableScreen.java`, `FlipperScreen.java`, `MoneyScreen.java`, `ReportScreen.java`, `FlipperDetailScreen.java`,
