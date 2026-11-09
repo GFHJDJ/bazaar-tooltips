@@ -64,6 +64,9 @@ public final class MoneyEngine {
 		Long hardCap;
 		String hardWhy = "";
 		Function<Long, Calc> calc;
+		/** For the Coin advisor: coins n uses, hours n takes (0 = instant), and the bazaar product the result sells as. */
+		public Function<Long, Double> costAt, hrsAt;
+		public BazaarPrices.Price sellIt;
 
 		@Override public double profitAt(long n) { return profitAt.apply(n); }
 		@Override public Long maxAfford(double c) { return maxAfford == null ? null : maxAfford.apply(c); }
@@ -176,6 +179,16 @@ public final class MoneyEngine {
 				: new Object[] {Math.floor(bookDepth(it.buyOrders()) / per), "what buyers want in the order book now"};
 	}
 
+	/** Hours to fill n with buy orders (0 when you insta-buy), as the site's buyHrs. */
+	static double buyHrs(BazaarPrices.Price it, double n, boolean order) {
+		return order ? (perHr(it.sellMovingWeek()) > 0 ? n / perHr(it.sellMovingWeek()) : Double.POSITIVE_INFINITY) : 0;
+	}
+
+	/** Hours to fill n with sell offers (0 when you insta-sell), as the site's sellHrs. */
+	double sellHrs(BazaarPrices.Price it, double n) {
+		return x.sellOffer() ? (perHr(it.buyMovingWeek()) > 0 ? n / perHr(it.buyMovingWeek()) : Double.POSITIVE_INFINITY) : 0;
+	}
+
 	/** capMin: the tightest of several caps. */
 	private static void capMin(Row r, Object[]... caps) {
 		double best = Double.POSITIVE_INFINITY;
@@ -254,6 +267,9 @@ public final class MoneyEngine {
 		if (!(fs > 0) || sellIt == null || !(costEach > 0)) return;
 		int out = rec.n();
 		row.sized = true;
+		row.sellIt = sellIt;
+		row.costAt = n -> n * costEach;
+		row.hrsAt = n -> rec.t() / 3600.0 + sellHrs(sellIt, (double) n * out);
 		row.profitAt = n -> bzSellGet(sellIt, n * out).total() - n * costEach;
 		row.maxAfford = c -> (long) Math.floor(c / costEach);
 		row.maxFit = s -> {
@@ -333,6 +349,8 @@ public final class MoneyEngine {
 			int st = SiteData.stackOf(id, false);
 			capMin(row, capBuy(it, 1, order));
 			row.profitAt = n -> n * npc - bzBuyCost(it, n, order).total();
+			row.costAt = n -> bzBuyCost(it, n, order).total();
+			row.hrsAt = n -> buyHrs(it, n, order);
 			row.maxAfford = b -> affordSearch(n -> bzBuyCost(it, n, order).total(), b);
 			row.maxFit = sl -> (long) sl * st;
 			row.slotsUsed = n -> ceilDiv(n, st);
@@ -412,6 +430,11 @@ public final class MoneyEngine {
 				return get - n * costEach;
 			};
 			row.maxAfford = b -> Math.min(10_000_000L, (long) Math.floor(b / costEach));
+			if (bz) {
+				row.sellIt = sellIt;
+				row.costAt = n -> n * costEach;
+				row.hrsAt = n -> sellHrs(sellIt, (double) n * r.q());
+			}
 			row.maxFit = sl -> (long) Math.floor((double) sl * st / r.q());
 			row.slotsUsed = n -> (long) Math.ceil((double) n * r.q() / st);
 			row.breaks = () -> bz && !x.sellOffer() ? Amounts.cumBreaks(sellIt.buyOrders(), r.q()) : List.of();
@@ -553,6 +576,9 @@ public final class MoneyEngine {
 				// bookSizing
 				row.sized = true;
 				row.profitAt = k -> bzSellGet(b, k).total() - bzBuyCost(a, 2 * k, order).total();
+				row.costAt = k -> bzBuyCost(a, 2 * k, order).total();
+				row.hrsAt = k -> buyHrs(a, 2.0 * k, order) + sellHrs(b, k);
+				row.sellIt = b;
 				row.maxAfford = c -> affordSearch(k -> bzBuyCost(a, 2 * k, order).total(), c);
 				row.maxFit = sl -> (long) Math.floor(sl / 2.0);
 				row.slotsUsed = k -> 2 * k;

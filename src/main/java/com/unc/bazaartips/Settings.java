@@ -81,6 +81,13 @@ public final class Settings {
 	public static boolean hideRisky = true;
 	/** Flipper: hide flips scoring under this (0 = show all). */
 	public static int flipMinScore = 0;
+	/** Chat alerts for flips that reach flipAlertScore. */
+	public static boolean flipAlerts = false;
+	/** Gear settings: the tab the key opens ("last" = the one you used last), tabs you hid, and what item tooltips show. */
+	public static String startTab = "last";
+	public static java.util.LinkedHashSet<String> hiddenTabs = new java.util.LinkedHashSet<>();
+	public static boolean tooltips = true, tooltipCrafts = true;
+	public static int flipAlertScore = 80;
 	/** NPC & Forge: buy materials with buy orders (else insta-buy). */
 	public static boolean moneyBuyOrder = false;
 	/** NPC & Forge: sell on the bazaar with sell offers (else insta-sell). */
@@ -107,6 +114,9 @@ public final class Settings {
 	public static String profitFuel = "None";
 	public static String profitUp1 = "None", profitUp2 = "None";
 	public static boolean profitAuto = false;
+	/** Coin advisor: sort, which kind of idea to show ("all", "flip", ...), kinds and item ids you left out. */
+	public static String planSort = "coins", planSrc = "all";
+	public static java.util.LinkedHashSet<String> planExSrc = new java.util.LinkedHashSet<>(), planEx = new java.util.LinkedHashSet<>();
 	public static java.util.LinkedHashSet<String> profitRequire = new java.util.LinkedHashSet<>();
 	public static java.util.LinkedHashSet<String> profitExclude = new java.util.LinkedHashSet<>();
 	public static String profitHopper = "No hopper";
@@ -181,9 +191,9 @@ public final class Settings {
 			if (o.has("rounded")) Format.setRounded(o.get("rounded").getAsBoolean());
 			if (o.has("lookupName")) lookupName = o.get("lookupName").getAsString();
 			if (o.has("lookupProfile")) lookupProfile = o.get("lookupProfile").getAsString();
-			tab = str(o, "tab", tab, "crafts", "flips", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur", "orders");
+			tab = str(o, "tab", tab, "crafts", "flips", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur", "orders", "plan");
 			for (String k : new String[] {"pricesSort", "bookSort", "minionSort", "profitSort", "essenceSort", "curSort", "profitSell", "profitFuel",
-					"profitUp1", "profitUp2", "profitHopper", "profitChest", "essenceType", "curType"}) {
+					"profitUp1", "profitUp2", "profitHopper", "profitChest", "essenceType", "curType", "planSort", "planSrc"}) {
 				if (o.has(k)) Settings.class.getField(k).set(null, o.get(k).getAsString());
 			}
 			if (o.has("orderAlerts")) orderAlerts = o.get("orderAlerts").getAsBoolean();
@@ -196,11 +206,19 @@ public final class Settings {
 			if (o.has("essenceProfitableOnly")) essenceProfitableOnly = o.get("essenceProfitableOnly").getAsBoolean();
 			if (o.has("profitRequire")) { profitRequire.clear(); o.getAsJsonArray("profitRequire").forEach(e -> profitRequire.add(e.getAsString())); }
 			if (o.has("profitExclude")) { profitExclude.clear(); o.getAsJsonArray("profitExclude").forEach(e -> profitExclude.add(e.getAsString())); }
+			if (o.has("planExSrc")) { planExSrc.clear(); o.getAsJsonArray("planExSrc").forEach(e -> planExSrc.add(e.getAsString())); }
+			if (o.has("planEx")) { planEx.clear(); o.getAsJsonArray("planEx").forEach(e -> planEx.add(e.getAsString())); }
 			if (o.has("flipSort")) flipSort = o.get("flipSort").getAsString();
 			if (o.has("forgeSort")) forgeSort = o.get("forgeSort").getAsString();
 			if (o.has("npcSort")) npcSort = o.get("npcSort").getAsString();
 			if (o.has("npcShopSort")) npcShopSort = o.get("npcShopSort").getAsString();
 			if (o.has("hideRisky")) hideRisky = o.get("hideRisky").getAsBoolean();
+			startTab = str(o, "startTab", startTab, "last", "crafts", "flips", "plan", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur", "orders");
+			if (o.has("hiddenTabs")) { hiddenTabs.clear(); o.getAsJsonArray("hiddenTabs").forEach(e -> hiddenTabs.add(e.getAsString())); }
+			if (o.has("tooltips")) tooltips = o.get("tooltips").getAsBoolean();
+			if (o.has("tooltipCrafts")) tooltipCrafts = o.get("tooltipCrafts").getAsBoolean();
+			if (o.has("flipAlerts")) flipAlerts = o.get("flipAlerts").getAsBoolean();
+			if (o.has("flipAlertScore")) flipAlertScore = Math.max(1, Math.min(100, o.get("flipAlertScore").getAsInt()));
 			if (o.has("flipMinScore")) flipMinScore = Math.max(0, Math.min(100, o.get("flipMinScore").getAsInt()));
 			if (o.has("moneyBuyOrder")) moneyBuyOrder = o.get("moneyBuyOrder").getAsBoolean();
 			if (o.has("moneySellOffer")) moneySellOffer = o.get("moneySellOffer").getAsBoolean();
@@ -242,6 +260,14 @@ public final class Settings {
 			o.addProperty("npcShopSort", npcShopSort);
 			o.addProperty("hideRisky", hideRisky);
 			o.addProperty("flipMinScore", flipMinScore);
+			o.addProperty("flipAlerts", flipAlerts);
+			o.addProperty("startTab", startTab);
+			com.google.gson.JsonArray ht = new com.google.gson.JsonArray();
+			hiddenTabs.forEach(ht::add);
+			o.add("hiddenTabs", ht);
+			o.addProperty("tooltips", tooltips);
+			o.addProperty("tooltipCrafts", tooltipCrafts);
+			o.addProperty("flipAlertScore", flipAlertScore);
 			o.addProperty("moneyBuyOrder", moneyBuyOrder);
 			o.addProperty("moneySellOffer", moneySellOffer);
 			o.addProperty("bazaarOnly", bazaarOnly);
@@ -249,7 +275,7 @@ public final class Settings {
 			o.addProperty("npcView", npcView);
 			o.addProperty("forgeHotm", forgeHotm);
 			for (String k : new String[] {"pricesSort", "bookSort", "minionSort", "profitSort", "essenceSort", "curSort", "profitSell", "profitFuel",
-					"profitUp1", "profitUp2", "profitHopper", "profitChest", "essenceType", "curType"}) {
+					"profitUp1", "profitUp2", "profitHopper", "profitChest", "essenceType", "curType", "planSort", "planSrc"}) {
 				o.addProperty(k, (String) Settings.class.getField(k).get(null));
 			}
 			o.addProperty("orderAlerts", orderAlerts);
@@ -265,6 +291,11 @@ public final class Settings {
 			profitExclude.forEach(ex::add);
 			o.add("profitRequire", req);
 			o.add("profitExclude", ex);
+			com.google.gson.JsonArray pxs = new com.google.gson.JsonArray(), px = new com.google.gson.JsonArray();
+			planExSrc.forEach(pxs::add);
+			planEx.forEach(px::add);
+			o.add("planExSrc", pxs);
+			o.add("planEx", px);
 			JsonObject u = new JsonObject();
 			unlocks.forEach(u::addProperty);
 			o.add("unlocks", u);

@@ -32,6 +32,7 @@ abstract class BaseScreen extends Screen {
 	private static final String[][] TABS = {
 			{"crafts", "Crafts", "Crafts: buy the ingredients on the bazaar, craft, sell the result (the site's two Craft tabs)."},
 			{"flips", "Flipper", "Flipper: buy with a buy order, sell with a sell offer, keep the gap (the site's Flipper tab)."},
+			{"plan", "Advisor", "Coin advisor: every flip, NPC flip, forge, book combine and craft sized to your coins and slots, best first."},
 			{"npc", "NPC", "NPC flips: buy on the Bazaar and sell to an NPC, or buy from an NPC shop and sell on the Bazaar or AH."},
 			{"forge", "Forge", "Forge: buy the materials, forge it in the Dwarven Mines, sell the result."},
 			{"prices", "Prices", "Prices: every bazaar item's insta-buy and insta-sell price, spread, margin and volume, with its order book."},
@@ -42,10 +43,26 @@ abstract class BaseScreen extends Screen {
 			{"cur", "Currency", "Currencies: what to buy with copper, medals, pelts, North Stars and more, ranked by coins per one."},
 			{"orders", "Orders", "Your bazaar orders (read when you open Manage Orders) and whether each is still on top. Chat alerts when one is outbid."}};
 
+	/** Every tab: key, label, explanation (for the settings). */
+	static String[][] tabs() {
+		return TABS;
+	}
+
+	static String tabLabel(String key) {
+		for (String[] t : TABS) if (t[0].equals(key)) return t[1];
+		return key;
+	}
+
+	/** Shown unless you hid it in the settings; the tab you're on always shows. */
+	private boolean tabShown(int i) {
+		return !Settings.hiddenTabs.contains(TABS[i][0]) || TABS[i][0].equals(currentTab);
+	}
+
 	/** The list screen for a tab. */
 	static Screen screenFor(String tab) {
 		return switch (tab) {
 			case "flips" -> new FlipperScreen();
+			case "plan" -> new AdvisorScreen();
 			case "npc" -> new MoneyScreen("npc");
 			case "forge" -> new MoneyScreen("forge");
 			case "books" -> new MoneyScreen("books");
@@ -69,6 +86,7 @@ abstract class BaseScreen extends Screen {
 		tabPos = new int[TABS.length][];
 		int x = left, y = 2, right = left + tableWidth - ROUNDED_BUTTON_WIDTH - 4 - GEAR_WIDTH - 2;
 		for (int i = 0; i < TABS.length; i++) {
+			if (!tabShown(i)) continue;
 			int w = Math.max(36, font.width(TABS[i][1]) + 12);
 			if (x + w > right && x > left) {
 				x = left;
@@ -99,6 +117,7 @@ abstract class BaseScreen extends Screen {
 		currentTab = current;
 		layoutTabs();
 		for (int i = 0; i < TABS.length; i++) {
+			if (tabPos[i] == null) continue;
 			String key = TABS[i][0];
 			Button b = addRenderableWidget(Button.builder(Component.literal(TABS[i][1]), btn -> {
 				if (key.equals(currentTab)) return;
@@ -115,6 +134,7 @@ abstract class BaseScreen extends Screen {
 	/** The tabs' explanations and the underline under the current one; call each frame after explain.clear(). */
 	protected void drawTabs(GuiGraphicsExtractor graphics) {
 		for (int i = 0; i < TABS.length; i++) {
+			if (tabPos[i] == null) continue;
 			int x = tabPos[i][0], y = tabPos[i][1], w = tabPos[i][2];
 			explain.add(x, y, x + w, y + 14, TABS[i][2] + (TABS[i][0].equals(currentTab) ? " (You're here.)" : " Click to switch."));
 			if (TABS[i][0].equals(currentTab)) graphics.fill(x, y + 14, x + w, y + 15, Colors.GOLD);

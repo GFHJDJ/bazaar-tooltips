@@ -2,6 +2,7 @@ package com.unc.bazaartips;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The Flipper, NPC and Forge lists, built from the live prices and your settings, and rebuilt only when
@@ -77,6 +78,7 @@ public final class MoneyData {
 	/** When Sell changes while sorting by "Best · sell offer / insta-sell", the sort follows (like the site). */
 	public static void syncSortFromSell() {
 		String want = Settings.moneySellOffer ? "coinsSO" : "coinsIS";
+		if (Settings.planSort.equals("coinsSO") || Settings.planSort.equals("coinsIS")) Settings.planSort = want;
 		if (Settings.forgeSort.equals("coinsSO") || Settings.forgeSort.equals("coinsIS")) Settings.forgeSort = want;
 		if (Settings.npcShopSort.equals("coinsSO") || Settings.npcShopSort.equals("coinsIS")) Settings.npcShopSort = want;
 		if (Settings.bookSort.equals("coinsSO") || Settings.bookSort.equals("coinsIS")) Settings.bookSort = want;
@@ -166,6 +168,40 @@ public final class MoneyData {
 	/** How many shop offers the NPCs filter hid. */
 	public static synchronized int hiddenShops() {
 		return hiddenShops;
+	}
+
+	// ---------------------------------------------------------------- the Coin advisor
+
+	private static String planStamp = "";
+	private static List<Advisor.Option> plan = List.of();
+
+	/** Everything the advisor depends on. */
+	public static String planStampNow() {
+		return moneyStamp() + "|" + NpcPrices.version() + "|" + Settings.reqs + "|" + Settings.unlocks + "|" + Settings.compactor + "|"
+				+ Settings.planSrc + "|" + Settings.planExSrc + "|" + Settings.planEx;
+	}
+
+	public static Advisor.Ctx planCtx() {
+		MoneyEngine.Ctx b = ctx();
+		MoneyEngine.Ctx m = new MoneyEngine.Ctx(b.prices(), b.npcSell(), b.ahBin(), b.tax(), b.buyOrder(), b.sellOffer(), true, b.npcAvail(),
+				b.forgeHotm(), b.coins(), b.slots());
+		return new Advisor.Ctx(m, new ArrayList<>(BazaarPrices.ids()), flips(), NpcPrices.version() > 0, CraftEngine.current(),
+				Settings.reqs, Settings.compactor, Settings.planSrc, Set.copyOf(Settings.planExSrc), Set.copyOf(Settings.planEx));
+	}
+
+	/** Every idea that makes money with your coins and slots (unsorted; empty without coins). */
+	public static synchronized List<Advisor.Option> plan() {
+		String st = planStampNow();
+		if (!st.equals(planStamp)) {
+			plan = Settings.coinsBudget() > 0 ? Advisor.options(planCtx()) : List.of();
+			planStamp = st;
+		}
+		return plan;
+	}
+
+	public static Advisor.Option planOption(String key) {
+		for (Advisor.Option o : plan()) if (o.key.equals(key)) return o;
+		return null;
 	}
 
 	// ---------------------------------------------------------------- the Flipper

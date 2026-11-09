@@ -50,8 +50,9 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			readOrders(client);
 			alertOrders(client);
+			alertFlips(client);
 			while (openFlips.consumeClick()) {
-				if (client.player != null) client.gui.setScreen(BaseScreen.screenFor(Settings.tab));
+				if (client.player != null) client.gui.setScreen(BaseScreen.screenFor(Settings.startTab.equals("last") ? Settings.tab : Settings.startTab));
 			}
 		});
 	}
@@ -108,7 +109,43 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		}
 	}
 
+	// ---- flip alerts ----
+
+	private static String lastFlipCheck = "";
+
+	/** After each price refresh (and as price history arrives), one chat line per flip that just reached your alert score. */
+	private static void alertFlips(net.minecraft.client.Minecraft client) {
+		if (!Settings.flipAlerts) {
+			if (!lastFlipCheck.isEmpty()) { FlipAlerts.reset(); lastFlipCheck = ""; }
+			return;
+		}
+		long t = BazaarPrices.lastFetchMillis();
+		if (t == 0 || client.player == null) return;
+		String st = t + "|" + CoflData.version() + "|" + Settings.flipAlertScore + "|" + Settings.tax();
+		if (st.equals(lastFlipCheck)) return;
+		lastFlipCheck = st;
+		CoflData.ensureMovement();
+		FlipAlerts.Result r = FlipAlerts.check(MoneyData.flips(), Settings.flipAlertScore, CoflData::move, CoflData::hist, System.currentTimeMillis());
+		if (!r.needHistory().isEmpty()) CoflData.queueHistory(r.needHistory(), false);
+		if (r.firstCount() >= 0) {
+			client.player.sendSystemMessage(Component.literal("[Bazaar Tooltips] ").withStyle(ChatFormatting.GOLD)
+					.append(Component.literal("Flip alerts on: " + r.firstCount() + " flip" + (r.firstCount() == 1 ? " scores " : "s score ")
+							+ Settings.flipAlertScore + "+ right now (Flipper tab). You'll get a message when a new one shows up.").withStyle(ChatFormatting.GRAY)));
+		}
+		for (Flipper.Listed l : r.alerts()) {
+			String[] text = FlipAlerts.text(l);
+			String bz = "/bz " + Recipes.name(l.flip().id());
+			client.player.sendSystemMessage(Component.literal("[Bazaar Tooltips] ").withStyle(ChatFormatting.GOLD)
+					.append(Component.literal(text[0]).withStyle(ChatFormatting.GREEN))
+					.append(Component.literal(text[1]).withStyle(ChatFormatting.GRAY))
+					.append(Component.literal(" [/bz]").withStyle(ChatFormatting.AQUA).withStyle(s -> s
+							.withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand(bz))
+							.withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.literal("Open the bazaar for " + l.flip().name()))))));
+		}
+	}
+
 	private static void addPriceLines(ItemStack stack, List<Component> lines) {
+		if (!Settings.tooltips) return;
 		CompoundTag tag = skyblockData(stack);
 		if (tag == null) return;
 		String skyblockId = tag.getString("id").orElse("");
@@ -144,7 +181,7 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		if (npc != null) addNpcLine(npc, count, lines);
 
 		if (price != null) {
-			addCraftLines(bazaarId, lines);
+			if (Settings.tooltipCrafts) addCraftLines(bazaarId, lines);
 			long age = BazaarPrices.ageMillis();
 			if (age > STALE_AFTER_MILLIS) {
 				lines.add(Component.literal("Prices are " + Format.age(age) + " old (can't reach Hypixel's API)")

@@ -3,34 +3,77 @@ package com.unc.bazaartips;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-/** The gear: the mod's settings. One row per setting: a label on the left, a button on the right. */
+/**
+ * The gear: the mod's settings, in sections. One row per setting: a label on the left, a button (or a number box)
+ * on the right. Scrolls when it doesn't fit.
+ */
 public class SettingsScreen extends BaseScreen {
-	/** A setting: its name, what its button says now, what it means, and what a click does. */
-	private record Item(String label, java.util.function.Supplier<String> value, String explanation, Runnable action) {}
+	/** A row: a section heading (value == null), a button, or a number box (onType != null). */
+	private record Item(String label, Supplier<String> value, String explanation, Runnable action, Consumer<String> onType) {
+		static Item heading(String label, String explanation) {
+			return new Item(label, null, explanation, null, null);
+		}
+
+		static Item button(String label, Supplier<String> value, String explanation, Runnable action) {
+			return new Item(label, value, explanation, action, null);
+		}
+
+		static Item box(String label, Supplier<String> value, String explanation, Consumer<String> onType) {
+			return new Item(label, value, explanation, null, onType);
+		}
+
+		boolean isHeading() {
+			return value == null;
+		}
+	}
 
 	private final List<Item> items = new ArrayList<>();
-	private final List<Button> buttons = new ArrayList<>();
-	private int top, rowGap, buttonW, explainLines;
+	private final List<Object> widgets = new ArrayList<>();     // Button, EditBox or null (heading) per item
+	private int top, rowGap, buttonW, explainLines, scroll, bottom;
 
 	public SettingsScreen(Screen parent) {
 		super("Settings", parent);
-		items.add(new Item("Open-screen key", () -> keyName(),
+		items.add(Item.heading("General", "How the bazaar screen opens and which tabs it shows."));
+		items.add(Item.button("Open-screen key", SettingsScreen::keyName,
 				"The key that opens the bazaar screen. Click to open Minecraft's Key Binds and change it: it's under Bazaar Tooltips "
 						+ "(also in Options > Controls > Key Binds).",
 				() -> minecraft.gui.setScreen(new net.minecraft.client.gui.screens.options.controls.KeyBindsScreen(this, minecraft.options))));
-		items.add(new Item("Panel in the bazaar", () -> onOff(Settings.bazaarOverlay),
+		items.add(Item.button("Key opens", () -> Settings.startTab.equals("last") ? "Last tab used" : tabLabel(Settings.startTab),
+				"Which tab the key opens: the one you used last, or always the same one. Click to step through the tabs.",
+				() -> {
+					List<String> keys = new ArrayList<>(List.of("last"));
+					for (String[] t : tabs()) keys.add(t[0]);
+					Settings.startTab = keys.get((keys.indexOf(Settings.startTab) + 1) % keys.size());
+				}));
+		items.add(Item.button("Tabs shown", () -> (tabs().length - hiddenCount()) + " of " + tabs().length,
+				"Hide tabs you don't use so the rest fit on one row. Click to pick.",
+				() -> minecraft.gui.setScreen(new TabsPickScreen(this))));
+		items.add(Item.heading("Item tooltips", "The lines added when you hover a SkyBlock item anywhere."));
+		items.add(Item.button("Price lines", () -> onOff(Settings.tooltips),
+				"Bazaar insta-buy / insta-sell, 7-day volume and what an NPC pays, added to item tooltips. Off = no extra lines at all.",
+				() -> Settings.tooltips = !Settings.tooltips));
+		items.add(Item.button("Craft lines", () -> onOff(Settings.tooltipCrafts),
+				"The craft cost and profit lines under the prices (only for items with a recipe). Off keeps tooltips short.",
+				() -> Settings.tooltipCrafts = !Settings.tooltipCrafts));
+		items.add(Item.heading("Bazaar", "Things shown while you're in /bz."));
+		items.add(Item.button("Panel in the bazaar", () -> onOff(Settings.bazaarOverlay),
 				"When you open an item in /bz, a panel beside it shows its prices, the flip and its score, crafting it, selling to an NPC, "
 						+ "and your orders on it. (It needs room beside the chest: a smaller GUI scale helps.)",
 				() -> Settings.bazaarOverlay = !Settings.bazaarOverlay));
-		items.add(new Item("Orders box on screen", () -> onOff(Settings.orderHud),
-				"A small box on your screen with your bazaar orders and whether each is still on top (red = outbid). Read from Manage Orders.",
+		items.add(Item.heading("Your orders", "Read from Manage Orders (Your Bazaar Orders) whenever you open it."));
+		items.add(Item.button("Orders box on screen", () -> onOff(Settings.orderHud),
+				"A small box on your screen with your bazaar orders and whether each is still on top (red = outbid).",
 				() -> Settings.orderHud = !Settings.orderHud));
-		items.add(new Item("Orders box position", () -> cornerName(),
+		items.add(Item.button("Orders box position", SettingsScreen::cornerName,
 				"Where the orders box sits on your screen. Click for the next spot.",
 				() -> {
 					for (int i = 0; i < Overlays.CORNERS.length; i++) {
@@ -41,9 +84,31 @@ public class SettingsScreen extends BaseScreen {
 					}
 					Settings.orderHudCorner = "top-left";
 				}));
-		items.add(new Item("Outbid chat alerts", () -> onOff(Settings.orderAlerts),
+		items.add(Item.button("Outbid chat alerts", () -> onOff(Settings.orderAlerts),
 				"A chat message when one of your bazaar orders is outbid or undercut (also on the Orders tab).",
 				() -> Settings.orderAlerts = !Settings.orderAlerts));
+		items.add(Item.heading("Flip alerts", "Chat messages when a flip reaches your alert score."));
+		items.add(Item.button("Flip chat alerts", () -> onOff(Settings.flipAlerts),
+				"A chat message (with a /bz link) when a flip reaches your alert score. The first check only says how many there are; after "
+						+ "that you hear about new ones, at most 3 per price update and each item at most once an hour. Risky and low-volume "
+						+ "flips never alert.",
+				() -> Settings.flipAlerts = !Settings.flipAlerts));
+		items.add(Item.box("Alert at score", () -> Integer.toString(Settings.flipAlertScore),
+				"The flip score (0-100, the Flipper tab's Score) a flip needs to alert. 75+ is Great, 60+ Good. Higher = fewer, better alerts.",
+				v -> {
+					try {
+						int n = Integer.parseInt(v.trim());
+						if (n >= 1 && n <= 100) Settings.flipAlertScore = n;
+					} catch (NumberFormatException ignored) {
+						// keep the last good number while typing
+					}
+				}));
+	}
+
+	private static int hiddenCount() {
+		int n = 0;
+		for (String[] t : tabs()) if (Settings.hiddenTabs.contains(t[0])) n++;
+		return n;
 	}
 
 	private static String onOff(boolean v) {
@@ -60,38 +125,96 @@ public class SettingsScreen extends BaseScreen {
 		return k == null ? "B" : k.getTranslatedKeyMessage().getString();
 	}
 
+	private int rowY(int i) {
+		int y = top;
+		for (int k = 0; k < i; k++) y += items.get(k).isHeading() ? 16 : rowGap;
+		if (items.get(i).isHeading() && i > 0) y += 4;
+		return y - scroll;
+	}
+
+	private int contentHeight() {
+		return rowY(items.size() - 1) + scroll + rowGap - top;
+	}
+
+	private int maxScroll() {
+		return Math.max(0, contentHeight() - (bottom - top));
+	}
+
 	@Override
 	protected void init() {
 		layoutPanel();
 		button("< Back", left, 2, 50, b -> onClose());
 		explainLines = height < 240 ? 2 : 3;
-		top = 30;
-		rowGap = 24;
+		top = 28;
+		rowGap = 22;
+		bottom = height - 8 - explainLines * (font.lineHeight + 1);
 		buttonW = Math.min(140, tableWidth / 2);
-		buttons.clear();
+		scroll = Math.min(scroll, maxScroll());
+		widgets.clear();
 		for (Item it : items) {
-			int y = top + buttons.size() * rowGap;
-			buttons.add(button(it.value().get(), left + tableWidth - buttonW, y, buttonW, b -> {
-				it.action().run();
-				Settings.save();
-				if (minecraft.gui.screen() == this) relabel(b, it.value().get(), buttonW);
-			}));
+			if (it.isHeading()) {
+				widgets.add(null);
+			} else if (it.onType() != null) {
+				EditBox box = addRenderableWidget(new EditBox(font, left + tableWidth - buttonW, 0, buttonW, 16, Component.literal(it.label())));
+				box.setValue(it.value().get());
+				box.setResponder(v -> { it.onType().accept(v); Settings.save(); });
+				widgets.add(box);
+			} else {
+				widgets.add(button(it.value().get(), left + tableWidth - buttonW, 0, buttonW, b -> {
+					it.action().run();
+					Settings.save();
+					if (minecraft.gui.screen() == this) relabel(b, it.value().get(), buttonW);
+				}));
+			}
+		}
+		place();
+	}
+
+	/** Puts each button/box at its scrolled row; hides the ones outside the visible area. */
+	private void place() {
+		for (int i = 0; i < items.size(); i++) {
+			Object w = widgets.get(i);
+			int y = rowY(i);
+			boolean vis = y >= top && y + 20 <= bottom;
+			if (w instanceof Button b) {
+				b.setY(y);
+				b.visible = vis;
+			} else if (w instanceof EditBox e) {
+				e.setY(y + 2);
+				e.visible = vis;
+			}
 		}
 	}
 
 	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+		scroll = Math.max(0, Math.min(maxScroll(), scroll + (scrollY > 0 ? -rowGap : scrollY < 0 ? rowGap : 0)));
+		place();
+		return true;
+	}
+
+	@Override
 	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+		place();
 		explain.clear();
 		explain.add(left, 2, left + 50, 22, "Back to the list.");
 		drawPanel(graphics);
 		graphics.centeredText(font, GEAR + " Settings", width / 2, 8, Colors.GOLD);
 		for (int i = 0; i < items.size(); i++) {
-			int y = top + i * rowGap;
-			graphics.text(font, fit(items.get(i).label(), tableWidth - buttonW - 8), left + 2, y + 6, Colors.WHITE);
-			explain.add(left, y, left + tableWidth, y + 20, items.get(i).label() + ": " + items.get(i).explanation());
+			Item it = items.get(i);
+			int y = rowY(i);
+			if (y < top || y + (it.isHeading() ? 12 : 20) > bottom) continue;
+			if (it.isHeading()) {
+				graphics.text(font, it.label(), left + 2, y + 2, Colors.GOLD);
+				graphics.fill(left, y + 12, left + tableWidth, y + 13, Colors.DIVIDER);
+				explain.add(left, y, left + tableWidth, y + 13, it.label() + ": " + it.explanation());
+			} else {
+				graphics.text(font, fit(it.label(), tableWidth - buttonW - 14), left + 8, y + 6, Colors.WHITE);
+				explain.add(left, y, left + tableWidth, y + 20, it.label() + ": " + it.explanation());
+			}
 		}
 		super.extractRenderState(graphics, mouseX, mouseY, delta);
 		drawExplainStrip(graphics, mouseX, mouseY, height - 6 - explainLines * (font.lineHeight + 1), explainLines,
-				"Hover a setting to see what it does. More settings coming.");
+				maxScroll() > 0 ? "Hover a setting to see what it does. Scroll for more." : "Hover a setting to see what it does.");
 	}
 }

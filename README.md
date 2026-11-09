@@ -33,7 +33,7 @@ Craft it (1 craft makes 9):
 ## The bazaar screen (press B)
 
 Press **B** in game. To change the key, click the gear (⚙) next to Rounded, then the key button (or Options > Controls > Key Binds > Bazaar Tooltips). It opens on the tab you
-used last. Tabs along the top (they wrap onto two rows): **Crafts**, **Flipper**, **NPC**, **Forge**, **Prices**, **Books**,
+used last (or one you pick in the gear). Tabs along the top (they wrap onto two rows; hide the ones you don't use in the gear): **Crafts**, **Flipper**, **Advisor**, **NPC**, **Forge**, **Prices**, **Books**,
 **Minions**, **Profit/hr**, **Essence**, **Currency**, **Orders** (ports of your website's tabs:
 same data, same math, checked against the site's own script number for number). Your coins, free slots,
 tax and Rounded setting are shared by every tab.
@@ -108,6 +108,18 @@ keep the gap after tax.
 - Details: the score breakdown part by part, a plan (how many to flip for your coins and slots, cost,
   what you get, profit, what limited it), how fast each side fills, market stats, warnings, and the live
   order book level by level.
+
+## Advisor tab (the site's Coin advisor)
+
+Type your coins (and free slots, if you like) and it sizes every flip, Bazaar -> NPC flip, NPC shop, forge,
+book combine and craft to them, then ranks them: **Kind**, **Best amount**, **Uses**, **Profit**, **Return**, **Time**,
+**Per hr**. At the top, a **suggested split**: the most profitable idea first, then the next best with the
+coins left over (up to 3; click one for its details). Bazaar sales only; risky and low-volume items are left out.
+
+- Buttons: **Sort**, **Show** (everything or one kind), **Buy** / **Sell** (shared with NPC, Forge and Books),
+  **Leave out** (whole kinds, or items you left out), **HotM**, **NPCs**, **Compactor**, **Tax**.
+- Click an idea for its best amount, what to buy and sell for it, a link to its own tab, and
+  **Leave this item out of the advisor**.
 
 ## NPC tab
 
@@ -198,8 +210,16 @@ opened Manage Orders.
 
 ## Settings (the gear)
 
-The ⚙ next to Rounded: the open-screen key, the bazaar panel on/off, the orders box on/off and where it
-sits (top left, top right, middle left), and outbid chat alerts on/off.
+The ⚙ next to Rounded (it scrolls when the window is small):
+
+- **General**: the open-screen key, which tab the key opens (last used, or always the same one), and which tabs are shown.
+- **Item tooltips**: price lines on/off, craft lines on/off.
+- **Bazaar**: the panel beside an item in /bz on/off.
+- **Your orders**: the orders box on/off and where it sits, outbid chat alerts on/off.
+- **Flip alerts**: a chat message (with a /bz link) when a flip reaches your alert score (default 80). The first
+  check just says how many there are; after that you hear about new ones, at most 3 per price update and each
+  item at most once an hour. Risky and low-volume flips never alert, and a flip only alerts once its SkyCofl
+  price history has loaded, so the score is the full one.
 
 ## What it connects to
 
@@ -217,12 +237,12 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.13.1.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.14.0.jar`.
 
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.13.1.jar`
+- `bazaar-tooltips-0.14.0.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
@@ -245,7 +265,8 @@ Open the folder in IntelliJ IDEA, let it import, then run the Gradle task `runCl
 - `AhPrices.java` - AH lowest BINs. `MoneyData.java` - builds the three tabs' lists. `MoneyReport.java` - their details lines.
 - `OrderTracker.java` + `OrdersScreen.java` - your bazaar orders and outbid alerts.
 - `Overlays.java` + `ProductSummary.java` - the panel in the bazaar and the orders box on your screen.
-- `SettingsScreen.java` - the gear's settings.
+- `SettingsScreen.java` + `TabsPickScreen.java` - the gear's settings. `FlipAlerts.java` - flip chat alerts.
+- `Advisor.java` + `AdvisorScreen.java`, `AdvisorDetailScreen.java`, `AdvisorExcludeScreen.java` - the Coin advisor.
 - `Settings.java` - your saved settings. `UnlockLookup.java` - My unlocks.
 - `FlipsScreen.java`, `FlipDetailScreen.java`, `SortScreen.java`, `FiltersScreen.java`, `BaseScreen.java`,
   `TableScreen.java`, `FlipperScreen.java`, `MoneyScreen.java`, `ReportScreen.java`, `FlipperDetailScreen.java`,

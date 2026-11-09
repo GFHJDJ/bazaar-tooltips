@@ -70,7 +70,8 @@ abstract class TableScreen<T> extends BaseScreen {
 	 * reach the top they stay there while the items scroll under them. pageScroll is in pixels.
 	 */
 	private int pageScroll = 0;
-	private int controlsPageY, headerPageY, lineH, rowH, pageBottom;
+	private int controlsPageY, headerPageY, lineH, rowH, pageBottom, controlsEnd;
+	private List<ProductSummary.Line> introLines = List.of();
 
 	protected TableScreen(String title, String tab) {
 		super(title, null);
@@ -111,6 +112,26 @@ abstract class TableScreen<T> extends BaseScreen {
 	/** A message to show instead of the list while data is still loading, or null when ready. */
 	protected String waiting() {
 		return BazaarPrices.lastFetchMillis() == 0 ? "Waiting for bazaar prices..." : null;
+	}
+
+	/** Lines between the buttons and the column names (the advisor's suggested split), or empty. Read on each rebuild. */
+	protected List<ProductSummary.Line> intro() {
+		return List.of();
+	}
+
+	/** What hovering intro line i explains (null = nothing). */
+	protected String introExplain(int i) {
+		return null;
+	}
+
+	/** A click on intro line i; return true if it did something. */
+	protected boolean introClicked(int i) {
+		return false;
+	}
+
+	/** The footer's help while waiting() shows a message. */
+	protected String waitingHint() {
+		return "This downloads in the background. Give it a few seconds.";
 	}
 
 	/** Called with the rows on screen after a rebuild or scroll (the Flipper fetches their price history). */
@@ -180,7 +201,8 @@ abstract class TableScreen<T> extends BaseScreen {
 			}));
 		}
 		int controlRows = (controls.size() + perRow - 1) / perRow;
-		headerPageY = controlsPageY + controlRows * CONTROL_ROW + 2;
+		controlsEnd = controlsPageY + controlRows * CONTROL_ROW + 2;
+		headerPageY = controlsEnd;
 		lineH = font.lineHeight + 2;
 		pageBottom = height - 6 - FOOTER_LINES * (font.lineHeight + 1);
 		rebuild(false);
@@ -289,6 +311,8 @@ abstract class TableScreen<T> extends BaseScreen {
 		String s = search();
 		builtFor = stamp(s);
 		rows = build(s);
+		introLines = intro();
+		headerPageY = controlsEnd + (introLines.isEmpty() ? 0 : introLines.size() * lineH + 8);
 		cols = columns();
 		layoutColumns();
 		if (backToTop && pageScroll > stickAt()) pageScroll = stickAt();
@@ -371,6 +395,20 @@ abstract class TableScreen<T> extends BaseScreen {
 			}
 		}
 
+		int hoveredIntro = introAt(mouseX, mouseY);
+		for (int i = 0; i < introLines.size(); i++) {
+			int py = introY(i);
+			if (!shown(py, lineH)) continue;
+			int y = screenY(py);
+			ProductSummary.Line l = introLines.get(i);
+			graphics.fill(left, y - 1, left + tableWidth, y - 1 + lineH, i == hoveredIntro && introExplain(i) != null ? Colors.ROW_HOVER : Colors.ROW_STRIPE);
+			int vw = l.value().isEmpty() ? 0 : font.width(l.value()) + 8, x = left + 3 + (l.indent() ? 6 : 0);
+			graphics.text(font, fit(l.text(), left + tableWidth - 3 - vw - x), x, y + 1, l.color());
+			if (vw > 0) rightText(graphics, l.value(), left + tableWidth - 3, y + 1, l.valueColor());
+			String ex = introExplain(i);
+			if (ex != null) explain.add(left, y - 1, left + tableWidth, y - 1 + lineH, ex);
+		}
+
 		super.extractRenderState(graphics, mouseX, mouseY, delta); // buttons and boxes
 
 		// column names (stay at the top once you scroll down; not drawn while they're still below the bottom edge)
@@ -399,7 +437,7 @@ abstract class TableScreen<T> extends BaseScreen {
 		if (wait != null || rows.isEmpty()) {
 			if (rowsTop() + 10 + font.lineHeight <= pageBottom)  // only when there's room above the footer
 				graphics.centeredText(font, fit(wait != null ? wait : emptyText(), tableWidth), width / 2, rowsTop() + 10, Colors.GRAY);
-			footer(graphics, mouseX, mouseY, footerY, wait != null ? "This downloads in the background. Give it a few seconds."
+			footer(graphics, mouseX, mouseY, footerY, wait != null ? waitingHint()
 					: "Try a different search, or change the settings above.");
 			return;
 		}
@@ -459,6 +497,19 @@ abstract class TableScreen<T> extends BaseScreen {
 		}
 		if (!line.isEmpty()) out.add(line);
 		return out;
+	}
+
+	private int introY(int i) {
+		return controlsEnd + 4 + i * lineH;
+	}
+
+	private int introAt(double x, double y) {
+		if (x < left || x >= left + tableWidth) return -1;
+		for (int i = 0; i < introLines.size(); i++) {
+			int py = introY(i), sy = screenY(py);
+			if (shown(py, lineH) && y >= sy - 1 && y < sy - 1 + lineH) return i;
+		}
+		return -1;
 	}
 
 	// ---- click a column name to sort by it ----
@@ -529,6 +580,8 @@ abstract class TableScreen<T> extends BaseScreen {
 				rebuild(true);
 				return true;
 			}
+			int intro = introAt(event.x(), event.y());
+			if (intro >= 0 && introClicked(intro)) return true;
 			int index = rowAt(event.x(), event.y());
 			if (index >= 0) {
 				open(rows.get(index));
