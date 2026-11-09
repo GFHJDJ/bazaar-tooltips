@@ -99,9 +99,22 @@ public class FlipsScreen extends TableScreen<CraftEngine.Craft> {
 	@Override
 	protected String tooltip(CraftEngine.Craft c) {
 		if (!c.warnings().isEmpty()) return "! " + c.warnings().get(0);
-		CraftEngine.Best b = sized() ? bestOf(c) : null;
-		if (b != null) return "Best: craft " + Format.count(b.n()) + " -> " + Format.signedCoins(b.profit())
-				+ (b.sell() == CraftEngine.Sell.OFFER ? " (sell offer)" : " (insta-sell)");
+		if (sized()) {
+			// the shopping list for your coins & slots, right in the hover box
+			CraftEngine.ShopList sl = engine.shopList(c, Settings.sort, Settings.coinsBudget(), Settings.freeSlots());
+			if (sl == null) return "No profitable amount for your coins & slots right now";
+			StringBuilder sb = new StringBuilder("Best: craft " + Format.count(sl.crafts()) + " -> " + Format.signedCoins(sl.profit())
+					+ (sl.sell() == CraftEngine.Sell.OFFER ? " (sell offer)" : " (insta-sell)"));
+			int shown = 0;
+			for (CraftEngine.ShopLine l : sl.lines()) {
+				if (shown++ == 7) {
+					sb.append("\n...and more in the details");
+					break;
+				}
+				sb.append("\n").append(l.what()).append(": ").append(Double.isNaN(l.coins()) ? "no price" : Format.shortCoins(l.coins()));
+			}
+			return sb.toString();
+		}
 		StringBuilder sb = new StringBuilder();
 		for (CraftEngine.Ingredient i : c.ingredients()) {
 			if (!sb.isEmpty()) sb.append(", ");

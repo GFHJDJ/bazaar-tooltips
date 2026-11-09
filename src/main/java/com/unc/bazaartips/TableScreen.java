@@ -396,6 +396,10 @@ abstract class TableScreen<T> extends BaseScreen {
 	/** Breaks a tooltip at its " · " separators first (so phrases stay together), then between words if still too wide. */
 	private List<String> tooltipLines(String tip, int maxW) {
 		List<String> out = new ArrayList<>();
+		if (tip.contains("\n")) {                       // explicit lines: each one wrapped on its own
+			for (String part : tip.split("\n")) out.addAll(tooltipLines(part, maxW));
+			return out;
+		}
 		String line = "";
 		for (String part : tip.split(" · ")) {
 			String tryLine = line.isEmpty() ? part : line + " · " + part;

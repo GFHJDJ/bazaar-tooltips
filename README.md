@@ -176,6 +176,13 @@ your orders, the ones that need you first at the top: Outbid / Undercut, Tied (s
 Filled (claim it), Top. Hover one for the price to re-place it at. **Alerts** turns the chat messages on or
 off; **Forget orders** clears the list. Reopen Manage Orders after you change orders so the list stays right.
 
+## Shopping list for your coins & slots
+
+Enter your coins and/or free slots at the top of any list. Then:
+- **Hover a craft** on the Crafts tab: the best amount, everything to buy for it (how many, and the cost) and what you'd sell for.
+- **Every details screen opens with the shopping list**: Crafts (each ingredient, the price and how to buy it), Flipper
+  (the buy orders and sell offers to place), NPC / Forge / Books (the best amount, each material, selling, slots).
+
 ## Panel in the bazaar
 
 Open any item in /bz and a panel appears beside the chest: insta-buy / insta-sell, weekly volume and
@@ -210,12 +217,12 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.12.1.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.13.0.jar`.
 
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.12.1.jar`
+- `bazaar-tooltips-0.13.0.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)

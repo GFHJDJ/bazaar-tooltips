@@ -43,6 +43,8 @@ public final class CraftReport {
 				: c.byOrder() ? "with buy orders, 0.1 above the top buy order (cheaper, but you wait for them to fill)"
 				: "by insta-buying (the cheapest sell offer)";
 
+		rows.addAll(shoppingRows(e, c, sortKey, coins, slots));
+
 		// ---- tags (the card's meta line) ----
 		if (c.usesChain()) {
 			rows.add(new Row(Kind.NOTE, 0, "Chained craft", Colors.AQUA, "", "", 0,
@@ -176,19 +178,7 @@ public final class CraftReport {
 							"Not profitable this way right now, or it can't be done even once with what's in the order book."));
 				}
 			}
-			CraftEngine.ShopList sl = e.shopList(c, sortKey, coins, slots);
-			if (sl != null) {
-				rows.add(Row.heading("Shopping list · best amount: " + Format.count(sl.crafts()) + " craft" + (sl.crafts() == 1 ? "" : "s")
-								+ ", " + (sl.sell() == CraftEngine.Sell.OFFER ? "sell offer" : "insta-sell"),
-						"Exactly what to buy (and at what price) to make the best amount, and what you'd sell it for. Prices are the live order book right now"
-								+ (sl.usesOrders() ? "; orders fill over time and others may outbid you" : "") + "."));
-				for (CraftEngine.ShopLine l : sl.lines()) {
-					rows.add(Row.line(1, l.what(), l.how(), Double.isNaN(l.coins()) ? "none" : Format.coins(l.coins()),
-							l.selling() ? Colors.GREEN : Colors.YELLOW, l.what() + ": " + l.how() + "."));
-				}
-				rows.add(Row.line(1, "Profit", "", Format.signedCoins(sl.profit()), Colors.profit(sl.profit()),
-						"What you get selling, minus what you spend buying."));
-			}
+			// (the shopping list itself is at the top of the screen: see shoppingRows)
 			if (slots > 0) {
 				int n = CraftEngine.maxCraftsForSlots(c, slots);
 				rows.add(Row.line(1, "Slots", n < 1 ? "won't fit: one craft's materials need " + CraftEngine.slotsForCrafts(c, 1) + " slots"
@@ -247,6 +237,40 @@ public final class CraftReport {
 			rows.add(Row.line(1, Format.amount(l.amount()) + " items", Format.count(l.orders()) + " order" + (l.orders() == 1 ? "" : "s"),
 					Format.price(l.price()), Colors.YELLOW, "Price per item on the right. " + explain));
 		}
+	}
+
+	/**
+	 * The shopping list for your coins and free slots (the site's craftShopList): exactly what to buy, at what
+	 * price, to make the best amount, what you'd sell for, and the profit. Shown first on the details screen.
+	 */
+	public static List<Row> shoppingRows(CraftEngine e, CraftEngine.Craft c, String sortKey, double coins, int slots) {
+		List<Row> rows = new ArrayList<>();
+		if (coins <= 0 && slots <= 0) {
+			rows.add(new Row(Kind.NOTE, 0, "Enter your coins and/or free slots on the list to get a shopping list here.", Colors.DARK_GRAY,
+					"", "", 0, "With your coins and slots, this shows exactly what to buy for the best amount of crafts."));
+			rows.add(Row.gap());
+			return rows;
+		}
+		CraftEngine.ShopList sl = e.shopList(c, sortKey, coins, slots);
+		if (sl == null) {
+			rows.add(new Row(Kind.NOTE, 0, "Shopping list: no profitable amount for your coins & slots right now.", Colors.RED, "", "", 0,
+					"Either it loses coins at today's order-book prices, or your coins or slots can't cover even one craft."));
+			rows.add(Row.gap());
+			return rows;
+		}
+		rows.add(Row.heading("Shopping list for your " + (coins > 0 ? Format.shortCoins(coins) + " coins" : "")
+						+ (coins > 0 && slots > 0 ? " & " : "") + (slots > 0 ? slots + " slots" : "") + ": " + Format.count(sl.crafts()) + " craft"
+						+ (sl.crafts() == 1 ? "" : "s") + ", " + (sl.sell() == CraftEngine.Sell.OFFER ? "sell offer" : "insta-sell"),
+				"Exactly what to buy (and at what price) to make the best amount for your coins and slots, and what you'd sell it for. "
+						+ "Prices are the live order book right now" + (sl.usesOrders() ? "; orders fill over time and others may outbid you" : "") + "."));
+		for (CraftEngine.ShopLine l : sl.lines()) {
+			rows.add(Row.line(1, l.what(), l.how(), Double.isNaN(l.coins()) ? "none" : Format.coins(l.coins()),
+					l.selling() ? Colors.GREEN : Colors.YELLOW, l.selling() ? "What selling them all pays." : "What buying these costs."));
+		}
+		rows.add(Row.line(1, "Profit", "", Format.signedCoins(sl.profit()), Colors.profit(sl.profit()),
+				"What you get selling, minus what you spend buying."));
+		rows.add(Row.gap());
+		return rows;
 	}
 
 	private static Row reqRow(String label, String req, String explain) {

@@ -270,12 +270,14 @@ public final class MoneyEngine {
 		row.presets = fs == 1 ? new long[] {1} : new long[] {1, fs};
 		row.calc = n -> {
 			Trade g = bzSellGet(sellIt, n * out);
-			List<CalcLine> lines = List.of(
-					new CalcLine("Materials for " + Format.count(n) + " forge" + (n == 1 ? "" : "s"), Format.coins(n * costEach), false,
-							n + " of your " + fs + " forge slots" + (n > fs ? "; more than you have, so it takes " + ceilDiv(n, fs) + " rounds" : "")),
+			List<CalcLine> lines = new ArrayList<>();
+			lines.add(new CalcLine("Materials for " + Format.count(n) + " forge" + (n == 1 ? "" : "s"), Format.coins(n * costEach), false,
+					n + " of your " + fs + " forge slots" + (n > fs ? "; more than you have, so it takes " + ceilDiv(n, fs) + " rounds" : "")));
+			lines.addAll(materialLines(row.parts, n));
+			lines.addAll(List.of(
 					new CalcLine("Wait", Amounts.duration(rec.t() * ceilDiv(n, fs)), false,
 							n > fs ? ceilDiv(n, fs) + " rounds" : "all slots run at the same time"),
-					new CalcLine("Sell " + Format.count(n * out) + " on the Bazaar", Format.coins(g.total()), true, g.note() + ", after " + taxLabel() + " tax"));
+					new CalcLine("Sell " + Format.count(n * out) + " on the Bazaar", Format.coins(g.total()), true, g.note() + ", after " + taxLabel() + " tax")));
 			return new Calc(lines, g.total() - n * costEach, "");
 		};
 	}
@@ -426,11 +428,14 @@ public final class MoneyEngine {
 					note = "AH lowest BIN " + Format.price(su) + " each, before AH fees; listings may take a while to sell";
 				}
 				String paid = (r.coins() != 0 ? Format.coins(r.coins()) + " coins" : "") + (r.in().isEmpty() ? "" : (r.coins() != 0 ? " + " : "") + "materials");
-				return new Calc(List.of(
-						new CalcLine("Buy " + (r.q() > 1 ? Format.count(n) + "x (" + Format.count(items) + " items)" : Format.count(items)) + " from "
-								+ SiteData.npcName(r.npc()), Format.coins(pay), false, paid + " each time"),
+				List<CalcLine> lines = new ArrayList<>();
+				lines.add(new CalcLine("Buy " + (r.q() > 1 ? Format.count(n) + "x (" + Format.count(items) + " items)" : Format.count(items)) + " from "
+						+ SiteData.npcName(r.npc()), Format.coins(pay), false, paid + " each time"));
+				lines.addAll(materialLines(row.parts, n));
+				lines.addAll(List.of(
 						new CalcLine("Sell " + Format.count(items) + " on the " + (s.src().equals("Bazaar") ? "Bazaar" : "AH"), Format.coins(get), true, note),
-						invLine((long) Math.ceil((double) items / st), st)), get - pay,
+						invLine((long) Math.ceil((double) items / st), st)));
+				return new Calc(lines, get - pay,
 						items > 640 ? "Heads up: many NPCs cap how many you can buy per day (the wiki lists 640 a day for some shops), "
 								+ "so this may take more than one day." : "");
 			};
@@ -438,6 +443,17 @@ public final class MoneyEngine {
 		}
 		addCoinsInfo(rows);
 		return rows;
+	}
+
+	/** One "  incl. 160x Enchanted Diamond" line per material (the coins part is left out), for n of the recipe. */
+	private static List<CalcLine> materialLines(List<Part> parts, long n) {
+		List<CalcLine> out = new ArrayList<>();
+		for (Part p : parts) {
+			if (p.id() == null) continue;
+			out.add(new CalcLine("  incl. " + Format.count(p.qty() * n) + "x " + p.label(), Format.coins(p.total() * n), false,
+					Format.price(p.unit()) + " each · " + (p.src().equals("AH") ? "AH lowest BIN" : "Bazaar")));
+		}
+		return out;
 	}
 
 	private CalcLine invLine(long used, int stack) {

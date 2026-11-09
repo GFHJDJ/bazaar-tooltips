@@ -39,6 +39,45 @@ public final class MoneyReport {
 		BazaarPrices.Price it = f.it();
 		long n = q.n();
 
+		// ---- plan, first: with your coins & slots it's your shopping list ----
+		boolean sized = coins > 0 || slots > 0;
+		rows.add(Row.heading(sized ? "Shopping list for your coins & slots" : "Plan (about an hour of trading)",
+				"How many to flip and what it costs. Enter your coins and free slots on the list to size it for you."));
+		if (n > 0) {
+			int st = SiteData.stackOf(f.id(), false);
+			rows.add(Row.line(1, "Flip", "", Format.count(n) + "x", Colors.WHITE, "How many to flip: " + (q.why().equals("coins") ? "as many as your coins buy"
+					: q.why().equals("slots") ? "as many as fit in your free slots" : "about one hour of trading on the slower side") + "."));
+			rows.add(Row.line(1, "Buy order cost", Format.count(n) + " x " + Format.price(f.buyAt()), Format.coins(n * f.buyAt()), Colors.YELLOW,
+					"What the buy orders cost in total."));
+			rows.add(Row.line(1, "Sell offers get you", "after " + taxLabel + " tax", Format.coins(n * f.sellAt() * (1 - tax)), Colors.GREEN,
+					"What selling them all by sell offer pays, after tax."));
+			rows.add(Row.line(1, "Profit", "", Format.signedCoins(n * f.each()), Colors.profit(n * f.each()), "Sell offers minus buy orders."));
+			String lim = q.why().equals("coins") ? "Limited by your coins."
+					: q.why().equals("slots") ? "Limited by your free slots (" + ((n + st - 1) / st) + " of " + slots + ")."
+					: "About one hour of trading on the slower side" + (coins > 0 ? "" : "; enter your coins and free slots at the top to size it") + ".";
+			rows.add(note(lim, Colors.DARK_GRAY, "What stopped the amount from being bigger."));
+		} else {
+			rows.add(note(q.why().equals("slots") ? "Your free slots can't hold one." : "Your coins don't cover one at " + Format.price(f.buyAt()) + ".",
+					Colors.RED, "The amount came out as zero with your coins and slots."));
+		}
+		double hrs = n > 0 && f.flow() > 0 ? n / f.flow() : -1;
+		rows.add(Row.line(1, "Buy orders fill", "when people insta-sell", "~" + Format.coins(f.buyFill()) + "/hr", Colors.WHITE,
+				"Items insta-sold per hour (last 7 days / 168): how fast buy orders like yours get filled."));
+		rows.add(Row.line(1, "Sell offers fill", "when people insta-buy", "~" + Format.coins(f.sellFill()) + "/hr", Colors.WHITE,
+				"Items insta-bought per hour (last 7 days / 168): how fast sell offers like yours sell."));
+		if (hrs >= 0) {
+			rows.add(Row.line(1, "Time per side", "if you caught every trade", hrs < 1 ? Math.max(1, Math.round(hrs * 60)) + " min"
+					: String.format(Locale.US, "%.1f hr", hrs), Colors.WHITE, "Your amount divided by trades per hour on the slower side."));
+		}
+		rows.add(note("You're up against " + Format.count(it.buyOrderCount()) + " buy orders and " + Format.count(it.sellOfferCount())
+				+ " sell offers, so expect it to take longer, and recheck both prices before placing: they move.", Colors.DARK_GRAY,
+				"Other players' orders compete with yours, and the top prices change every minute."));
+		if (sized && n > 0 && q.why().equals("cap")) {
+			rows.add(note("Capped at about one hour of trading so you aren't stuck holding more than the market takes.", Colors.DARK_GRAY,
+					"Your coins and slots would allow more, but more than an hour's trading is risky to hold."));
+		}
+		rows.add(Row.gap());
+
 		// ---- the card ----
 		rows.add(Row.line(0, "Buy order at", "0.1 above the top buy order", Format.price(f.buyAt()), Colors.YELLOW,
 				"Place a buy order at this price: 0.1 coins above the current top buy order, so yours fills first."));
@@ -76,44 +115,6 @@ public final class MoneyReport {
 		}
 		rows.add(note("Points are a guide, not a guarantee. Missing parts are left out and the score is rescaled.", Colors.DARK_GRAY,
 				"The score is your points divided by the most you could get from the parts that are known, x 100."));
-
-		// ---- plan ----
-		rows.add(Row.gap());
-		boolean sized = coins > 0 || slots > 0;
-		rows.add(Row.heading("Plan", "How many to flip and what it costs. Enter your coins and free slots at the top to size it for you."));
-		if (n > 0) {
-			int st = SiteData.stackOf(f.id(), false);
-			rows.add(Row.line(1, "Flip", "", Format.count(n) + "x", Colors.WHITE, "How many to flip: " + (q.why().equals("coins") ? "as many as your coins buy"
-					: q.why().equals("slots") ? "as many as fit in your free slots" : "about one hour of trading on the slower side") + "."));
-			rows.add(Row.line(1, "Buy order cost", Format.count(n) + " x " + Format.price(f.buyAt()), Format.coins(n * f.buyAt()), Colors.YELLOW,
-					"What the buy orders cost in total."));
-			rows.add(Row.line(1, "Sell offers get you", "after " + taxLabel + " tax", Format.coins(n * f.sellAt() * (1 - tax)), Colors.GREEN,
-					"What selling them all by sell offer pays, after tax."));
-			rows.add(Row.line(1, "Profit", "", Format.signedCoins(n * f.each()), Colors.profit(n * f.each()), "Sell offers minus buy orders."));
-			String lim = q.why().equals("coins") ? "Limited by your coins."
-					: q.why().equals("slots") ? "Limited by your free slots (" + ((n + st - 1) / st) + " of " + slots + ")."
-					: "About one hour of trading on the slower side" + (coins > 0 ? "" : "; enter your coins and free slots at the top to size it") + ".";
-			rows.add(note(lim, Colors.DARK_GRAY, "What stopped the amount from being bigger."));
-		} else {
-			rows.add(note(q.why().equals("slots") ? "Your free slots can't hold one." : "Your coins don't cover one at " + Format.price(f.buyAt()) + ".",
-					Colors.RED, "The amount came out as zero with your coins and slots."));
-		}
-		double hrs = n > 0 && f.flow() > 0 ? n / f.flow() : -1;
-		rows.add(Row.line(1, "Buy orders fill", "when people insta-sell", "~" + Format.coins(f.buyFill()) + "/hr", Colors.WHITE,
-				"Items insta-sold per hour (last 7 days / 168): how fast buy orders like yours get filled."));
-		rows.add(Row.line(1, "Sell offers fill", "when people insta-buy", "~" + Format.coins(f.sellFill()) + "/hr", Colors.WHITE,
-				"Items insta-bought per hour (last 7 days / 168): how fast sell offers like yours sell."));
-		if (hrs >= 0) {
-			rows.add(Row.line(1, "Time per side", "if you caught every trade", hrs < 1 ? Math.max(1, Math.round(hrs * 60)) + " min"
-					: String.format(Locale.US, "%.1f hr", hrs), Colors.WHITE, "Your amount divided by trades per hour on the slower side."));
-		}
-		rows.add(note("You're up against " + Format.count(it.buyOrderCount()) + " buy orders and " + Format.count(it.sellOfferCount())
-				+ " sell offers, so expect it to take longer, and recheck both prices before placing: they move.", Colors.DARK_GRAY,
-				"Other players' orders compete with yours, and the top prices change every minute."));
-		if (sized && n > 0 && q.why().equals("cap")) {
-			rows.add(note("Capped at about one hour of trading so you aren't stuck holding more than the market takes.", Colors.DARK_GRAY,
-					"Your coins and slots would allow more, but more than an hour's trading is risky to hold."));
-		}
 
 		CraftReport.marketRows(rows, f.name(), it, true);
 		rows.add(Row.gap());
@@ -192,6 +193,27 @@ public final class MoneyReport {
 	public static List<Row> money(String tab, MoneyEngine.Row r, long qty, String taxLabel) {
 		List<Row> rows = new ArrayList<>();
 		boolean forge = tab.equals("forge"), npcBz = tab.equals("npc");
+
+		// ---- the calculator, first: at your best amount it's your shopping list ----
+		MoneyEngine.Calc calc = r.calc(qty);
+		if (calc != null) {
+			boolean atBest = r.best != null && r.best.n() == qty && qty > 0;
+			rows.add(Row.heading((atBest ? "Shopping list for your coins & slots: " : "How many? ") + r.qtyLabel + " " + Format.count(qty) + " " + r.qtyUnit,
+					(atBest ? "The best amount for your coins and free slots, and exactly what to buy for it. " : "")
+							+ "Change the amount above. Bazaar insta-buys and insta-sells walk the live order book, so big amounts show the real average price."));
+			for (MoneyEngine.CalcLine l : calc.lines()) {
+				String ex = l.what().equals("Inventory space") ? "How many inventory slots this takes, and whether it fits in your free slots."
+						: l.what().equals("Wait") ? "How long the forge takes for this many (rounds = more forges than you have slots)."
+						: l.what().startsWith("  incl.") ? "One material, already counted in the line above: how many to buy and what they cost."
+						: l.selling() ? "What selling them pays (Bazaar after tax; insta-sells walk the order book)."
+						: "What buying them costs (insta-buys walk the order book, so big amounts cost more each).";
+				rows.add(Row.line(1, l.what(), l.how(), l.coins(), l.selling() ? Colors.GREEN : l.what().equals("Inventory space")
+						&& l.how().contains("more than your") ? Colors.RED : l.what().startsWith("  incl.") ? Colors.GRAY : Colors.YELLOW, ex));
+			}
+			rows.add(Row.line(1, "Profit", "", Format.signedCoins(calc.profit()), Colors.profit(calc.profit()), "What you get selling minus what you pay."));
+			if (!calc.footnote().isEmpty()) rows.add(note(calc.footnote(), Colors.ORANGE, "A limit the calculator can't see."));
+			rows.add(Row.gap());
+		}
 		rows.add(note(r.flag, Colors.AQUA, forge ? "How long one forge takes." : npcBz ? "Buy it on the Bazaar, sell it to an NPC."
 				: tab.equals("books") ? "Combine two books in an anvil (costs XP levels, not coins)."
 				: tab.equals("cur") ? "What one purchase costs in the currency."
@@ -220,24 +242,6 @@ public final class MoneyReport {
 			String lim = bestLimit(r);
 			rows.add(note(best + (lim.isEmpty() ? "" : " (" + lim + ")"), r.best.n() > 0 && r.best.profit() > 0 ? Colors.GREEN : Colors.RED,
 					"The most profitable amount per trip for your coins and free slots, walking the live order book (prices get worse as you buy or sell more)."));
-		}
-
-		// ---- the calculator ----
-		MoneyEngine.Calc calc = r.calc(qty);
-		if (calc != null) {
-			rows.add(Row.gap());
-			rows.add(Row.heading("How many? " + r.qtyLabel + " " + Format.count(qty) + " " + r.qtyUnit,
-					"Change the amount above. Bazaar insta-buys and insta-sells walk the live order book, so big amounts show the real average price."));
-			for (MoneyEngine.CalcLine l : calc.lines()) {
-				String ex = l.what().equals("Inventory space") ? "How many inventory slots this takes, and whether it fits in your free slots."
-						: l.what().equals("Wait") ? "How long the forge takes for this many (rounds = more forges than you have slots)."
-						: l.selling() ? "What selling them pays (Bazaar after tax; insta-sells walk the order book)."
-						: "What buying them costs (insta-buys walk the order book, so big amounts cost more each).";
-				rows.add(Row.line(1, l.what(), l.how(), l.coins(), l.selling() ? Colors.GREEN : l.what().equals("Inventory space")
-						&& l.how().contains("more than your") ? Colors.RED : Colors.YELLOW, ex));
-			}
-			rows.add(Row.line(1, "Profit", "", Format.signedCoins(calc.profit()), Colors.profit(calc.profit()), "What you get selling minus what you pay."));
-			if (!calc.footnote().isEmpty()) rows.add(note(calc.footnote(), Colors.ORANGE, "A limit the calculator can't see."));
 		}
 
 		// ---- materials / cost table ----

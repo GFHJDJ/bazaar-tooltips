@@ -134,7 +134,7 @@ public final class BazaarPrices {
 		try {
 			HttpRequest request = HttpRequest.newBuilder(url)
 					.timeout(Duration.ofSeconds(30))
-					.header("User-Agent", "BazaarTooltips/0.12")
+					.header("User-Agent", "BazaarTooltips/0.13")
 					.GET()
 					.build();
 			HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
