@@ -23,7 +23,22 @@ abstract class TableScreen<T> extends BaseScreen {
 	protected record Column<T>(String header, String explanation, Function<T, String> value, ToIntFunction<T> color) {}
 
 	/** A setting button: its label and explanation (both re-read after every click), and what a click does. */
-	protected record Control(Supplier<String> label, Supplier<String> explanation, Runnable action) {}
+	protected record Control(Supplier<String> label, Supplier<String> explanation, Runnable action, Supplier<String> boxValue,
+			java.util.function.Consumer<String> onType) {
+		/** A button. */
+		public Control(Supplier<String> label, Supplier<String> explanation, Runnable action) {
+			this(label, explanation, action, null, null);
+		}
+
+		/** A typing box: label() is the text beside it, boxValue() what's in it, onType() gets what you type. */
+		static Control box(String label, Supplier<String> value, java.util.function.Consumer<String> onType, Supplier<String> explanation) {
+			return new Control(() -> label, explanation, null, value, onType);
+		}
+
+		boolean isBox() {
+			return onType != null;
+		}
+	}
 
 	/** What's typed in each tab's search box (kept while the game is open, like the site's search). */
 	private static final Map<String, String> SEARCH = new HashMap<>();
@@ -44,7 +59,8 @@ abstract class TableScreen<T> extends BaseScreen {
 	private int[] colLine = new int[0], colRight = new int[0];
 	private int colLines = 1;
 	private List<Control> controls = List.of();
-	private final List<Button> controlButtons = new ArrayList<>();
+	private final List<Button> controlButtons = new ArrayList<>();      // null for a typing box
+	private final java.util.Map<Integer, EditBox> controlBoxes = new java.util.HashMap<>();
 	private EditBox searchBox, coinsBox, slotsBox;
 	private int perRow, controlW;
 	private String builtFor = null;
@@ -130,12 +146,13 @@ abstract class TableScreen<T> extends BaseScreen {
 
 		controls = controls();
 		controlButtons.clear();
+		controlBoxes.clear();
 		// as many buttons per row as fit with their whole labels (the page scrolls, so extra rows are fine)
 		perRow = Math.max(1, Math.min(4, controls.size()));
 		while (perRow > 1) {
 			int w = (tableWidth - (perRow - 1) * 4) / perRow;
 			boolean fits = true;
-			for (Control c : controls) if (font.width(c.label().get()) + 8 > w) fits = false;
+			for (Control c : controls) if (font.width(c.label().get()) + (c.isBox() ? 40 : 8) > w) fits = false;
 			if (fits) break;
 			perRow--;
 		}
@@ -143,11 +160,21 @@ abstract class TableScreen<T> extends BaseScreen {
 		controlsPageY = 22;
 		for (int i = 0; i < controls.size(); i++) {
 			Control c = controls.get(i);
-			controlButtons.add(button(c.label().get(), left + (i % perRow) * (controlW + 4), PAGE_TOP + controlY(i), controlW, b -> {
+			int cx = left + (i % perRow) * (controlW + 4);
+			if (c.isBox()) {
+				int lw = font.width(c.label().get()) + 6;
+				EditBox box = addRenderableWidget(new EditBox(font, cx + lw, PAGE_TOP + controlY(i) + 2, controlW - lw, 16, Component.literal(c.label().get())));
+				box.setValue(c.boxValue().get());
+				box.setResponder(v -> { c.onType().accept(v); Settings.save(); relabelAll(); rebuild(true); });
+				controlBoxes.put(i, box);
+				controlButtons.add(null);
+				continue;
+			}
+			controlButtons.add(button(c.label().get(), cx, PAGE_TOP + controlY(i), controlW, b -> {
 				c.action().run();
 				Settings.save();
 				if (minecraft.gui.screen() == this) {
-					for (int k = 0; k < controlButtons.size(); k++) relabel(controlButtons.get(k), controls.get(k).label().get(), controlW);
+					relabelAll();
 					rebuild(true);
 				}
 			}));
@@ -157,6 +184,12 @@ abstract class TableScreen<T> extends BaseScreen {
 		lineH = font.lineHeight + 2;
 		pageBottom = height - 6 - FOOTER_LINES * (font.lineHeight + 1);
 		rebuild(false);
+	}
+
+	private void relabelAll() {
+		for (int k = 0; k < controlButtons.size(); k++) {
+			if (controlButtons.get(k) != null) relabel(controlButtons.get(k), controls.get(k).label().get(), controlW);
+		}
 	}
 
 	private int controlY(int i) {
@@ -176,8 +209,14 @@ abstract class TableScreen<T> extends BaseScreen {
 		for (int i = 0; i < controlButtons.size(); i++) {
 			Button b = controlButtons.get(i);
 			int y = screenY(controlY(i));
-			b.setY(y);
-			b.visible = y >= PAGE_TOP && y + 20 <= Math.min(headerTop(), pageBottom);
+			boolean vis = y >= PAGE_TOP && y + 20 <= Math.min(headerTop(), pageBottom);
+			if (b != null) {
+				b.setY(y);
+				b.visible = vis;
+			} else if (controlBoxes.containsKey(i)) {
+				controlBoxes.get(i).setY(y + 2);
+				controlBoxes.get(i).visible = vis;
+			}
 		}
 	}
 
@@ -299,7 +338,7 @@ abstract class TableScreen<T> extends BaseScreen {
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
 		if (!stamp(search()).equals(builtFor)) {
-			for (int k = 0; k < controlButtons.size(); k++) relabel(controlButtons.get(k), controls.get(k).label().get(), controlW);
+			relabelAll();
 			rebuild(false);
 		}
 		placeWidgets();
@@ -323,7 +362,13 @@ abstract class TableScreen<T> extends BaseScreen {
 		}
 		for (int i = 0; i < controls.size(); i++) {
 			Button b = controlButtons.get(i);
-			if (b.visible) explain.add(b.getX(), b.getY(), b.getX() + controlW, b.getY() + 20, controls.get(i).explanation().get());
+			if (b != null) {
+				if (b.visible) explain.add(b.getX(), b.getY(), b.getX() + controlW, b.getY() + 20, controls.get(i).explanation().get());
+			} else if (controlBoxes.containsKey(i) && controlBoxes.get(i).visible) {
+				int cx = left + (i % perRow) * (controlW + 4), cy = controlBoxes.get(i).getY() - 2;
+				graphics.text(font, controls.get(i).label().get(), cx, cy + 6, Colors.GRAY);
+				explain.add(cx, cy, cx + controlW, cy + 20, controls.get(i).explanation().get());
+			}
 		}
 
 		super.extractRenderState(graphics, mouseX, mouseY, delta); // buttons and boxes
@@ -480,7 +525,7 @@ abstract class TableScreen<T> extends BaseScreen {
 			if (key != null) {
 				applySort(key);
 				Settings.save();
-				for (int k = 0; k < controlButtons.size(); k++) relabel(controlButtons.get(k), controls.get(k).label().get(), controlW);
+				relabelAll();
 				rebuild(true);
 				return true;
 			}

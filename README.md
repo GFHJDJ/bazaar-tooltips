@@ -100,7 +100,7 @@ keep the gap after tax.
 - Columns: **Score** (0-100 and a grade), profit **Each**, **Margin**, profit **Per hr** (if you caught every
   trade on the slower side), **Trades/hr**, and **Best** (with coins/slots set).
 - Buttons: **Sort** (flip score, profit / hr, best for your coins & slots, profit each, margin, trades / hr,
-  name), **Risky** (hide items that look manipulated, on by default), **Low vol**, **Tax**.
+  name), **Risky** (hide items that look manipulated, on by default), **Low vol**, **Min score** (type 0–100; flips scoring lower are hidden, empty = show all), **Tax**.
 - **Flip score**: margin, volume, both sides filling evenly, competition, today's price move and price
   history, minus points for warning signs. Price history and 24h moves are provided by SkyCofl
   (sky.coflnet.com), fetched politely (about one item a second, only what's on screen, kept 6 hours in
@@ -217,12 +217,12 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.13.0.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.13.1.jar`.
 
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.13.0.jar`
+- `bazaar-tooltips-0.13.1.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)

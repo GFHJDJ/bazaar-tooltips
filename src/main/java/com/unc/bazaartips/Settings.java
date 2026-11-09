@@ -79,6 +79,8 @@ public final class Settings {
 	public static String npcShopSort = "coins";
 	/** Flipper: hide items flagged as likely manipulated (the site's "Hide risky", on by default). */
 	public static boolean hideRisky = true;
+	/** Flipper: hide flips scoring under this (0 = show all). */
+	public static int flipMinScore = 0;
 	/** NPC & Forge: buy materials with buy orders (else insta-buy). */
 	public static boolean moneyBuyOrder = false;
 	/** NPC & Forge: sell on the bazaar with sell offers (else insta-sell). */
@@ -199,6 +201,7 @@ public final class Settings {
 			if (o.has("npcSort")) npcSort = o.get("npcSort").getAsString();
 			if (o.has("npcShopSort")) npcShopSort = o.get("npcShopSort").getAsString();
 			if (o.has("hideRisky")) hideRisky = o.get("hideRisky").getAsBoolean();
+			if (o.has("flipMinScore")) flipMinScore = Math.max(0, Math.min(100, o.get("flipMinScore").getAsInt()));
 			if (o.has("moneyBuyOrder")) moneyBuyOrder = o.get("moneyBuyOrder").getAsBoolean();
 			if (o.has("moneySellOffer")) moneySellOffer = o.get("moneySellOffer").getAsBoolean();
 			if (o.has("bazaarOnly")) bazaarOnly = o.get("bazaarOnly").getAsBoolean();
@@ -238,6 +241,7 @@ public final class Settings {
 			o.addProperty("npcSort", npcSort);
 			o.addProperty("npcShopSort", npcShopSort);
 			o.addProperty("hideRisky", hideRisky);
+			o.addProperty("flipMinScore", flipMinScore);
 			o.addProperty("moneyBuyOrder", moneyBuyOrder);
 			o.addProperty("moneySellOffer", moneySellOffer);
 			o.addProperty("bazaarOnly", bazaarOnly);

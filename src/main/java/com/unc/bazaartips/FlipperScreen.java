@@ -26,6 +26,14 @@ public class FlipperScreen extends TableScreen<Flipper.Listed> {
 						() -> "Hide low volume (" + onOff(Settings.hideLowVolume) + "): hides items with under 10k trades in the last 7 days "
 								+ "(the lower of insta-bought and insta-sold). Shared with the Crafts tab.",
 						() -> Settings.hideLowVolume = !Settings.hideLowVolume),
+				Control.box("Min score", () -> Settings.flipMinScore == 0 ? "" : String.valueOf(Settings.flipMinScore), v -> {
+					try {
+						Settings.flipMinScore = v.isBlank() ? 0 : Math.max(0, Math.min(100, Integer.parseInt(v.trim())));
+					} catch (NumberFormatException e) {
+						Settings.flipMinScore = 0;
+					}
+				}, () -> "Min score (" + (Settings.flipMinScore == 0 ? "off" : String.valueOf(Settings.flipMinScore)) + "): type a number from 0 to 100 and "
+						+ "flips with a lower score are hidden. Empty = show all."),
 				taxControl());
 	}
 
@@ -113,6 +121,7 @@ public class FlipperScreen extends TableScreen<Flipper.Listed> {
 
 	@Override
 	protected String emptyText() {
+		if (Settings.flipMinScore > 0) return "No flips score " + Settings.flipMinScore + " or more (lower Min score to see more)";
 		return "No profitable flips match" + (Settings.hideLowVolume || Settings.hideRisky ? " (try showing low volume or risky)" : "");
 	}
 

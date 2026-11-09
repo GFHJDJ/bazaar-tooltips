@@ -152,13 +152,21 @@ public final class Flipper {
 
 	public static List<Listed> list(List<Flip> flips, String search, boolean hideLowVolume, boolean hideRisky, String sortKey,
 			double coins, int slots, Function<String, CoflData.Move> moves, Function<String, CoflData.Hist> hists) {
+		return list(flips, search, hideLowVolume, hideRisky, 0, sortKey, coins, slots, moves, hists);
+	}
+
+	/** minScore: flips scoring under it are left out (0 = keep all). */
+	public static List<Listed> list(List<Flip> flips, String search, boolean hideLowVolume, boolean hideRisky, int minScore, String sortKey,
+			double coins, int slots, Function<String, CoflData.Move> moves, Function<String, CoflData.Hist> hists) {
 		String q = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
 		List<Listed> out = new ArrayList<>();
 		for (Flip f : flips) {
 			if (!(f.name().toLowerCase(Locale.ROOT).contains(q) || f.id().toLowerCase(Locale.ROOT).contains(q))) continue;
 			if (hideLowVolume && f.weekVol() < CraftEngine.LOW_VOLUME) continue;
 			if (hideRisky && f.risk().level() == Risk.Level.HIGH) continue;
-			out.add(new Listed(f, score(f, moves.apply(f.id()), hists.apply(f.id())), qty(f, coins, slots)));
+			Score sc = score(f, moves.apply(f.id()), hists.apply(f.id()));
+			if (sc.score() < minScore) continue;
+			out.add(new Listed(f, sc, qty(f, coins, slots)));
 		}
 		Comparator<Listed> c = switch (sortKey) {
 			case "name" -> Comparator.comparing(l -> l.flip().name());

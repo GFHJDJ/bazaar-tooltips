@@ -186,11 +186,11 @@ public final class MoneyData {
 	/** Stamp for a Flipper list: what it depends on, so screens know when to rebuild. */
 	public static String flipListStamp(String search) {
 		return BazaarPrices.lastFetchMillis() + "|" + Settings.tax() + "|" + CoflData.version() + "|" + Settings.coins + "|" + Settings.slots
-				+ "|" + Settings.flipSort + "|" + Settings.hideRisky + "|" + Settings.hideLowVolume + "|" + search + "|" + Format.rounded();
+				+ "|" + Settings.flipSort + "|" + Settings.hideRisky + "|" + Settings.flipMinScore + "|" + Settings.hideLowVolume + "|" + search + "|" + Format.rounded();
 	}
 
 	public static List<Flipper.Listed> flipList(String search) {
-		return Flipper.list(flips(), search, Settings.hideLowVolume, Settings.hideRisky, Settings.flipSort,
+		return Flipper.list(flips(), search, Settings.hideLowVolume, Settings.hideRisky, Settings.flipMinScore, Settings.flipSort,
 				Settings.coinsBudget(), Settings.freeSlots(), CoflData::move, CoflData::hist);
 	}
 
