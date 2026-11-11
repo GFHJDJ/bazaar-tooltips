@@ -22,17 +22,17 @@ public class EssenceScreen extends TableScreen<EssenceEngine.Ess> {
 		return List.of(
 				new Control(() -> "Essence: " + (Settings.essenceType.equals("all") ? "All" : EssenceEngine.ESSENCE_NAMES.getOrDefault(Settings.essenceType, Settings.essenceType)),
 						() -> "Which essence: shows only items that turn into it (All = everything). Click for the next one.",
-						() -> Settings.essenceType = types.get((types.indexOf(Settings.essenceType) + 1) % types.size())),
+						d -> Settings.essenceType = Cycle.step(types, Settings.essenceType, d)),
 				new Control(() -> "Sell: " + (Settings.essenceSellOffer ? "Sell offer" : "Insta-sell"),
 						() -> "How the essence sells on the Bazaar, after tax: insta-sell (now) or sell offer (more, but you wait).",
-						() -> Settings.essenceSellOffer = !Settings.essenceSellOffer),
+						d -> Settings.essenceSellOffer = !Settings.essenceSellOffer),
 				new Control(() -> "Profitable only: " + onOff(Settings.essenceProfitableOnly),
 						() -> "Profitable only (" + onOff(Settings.essenceProfitableOnly) + "): hides items that don't make money.",
-						() -> Settings.essenceProfitableOnly = !Settings.essenceProfitableOnly),
+						d -> Settings.essenceProfitableOnly = !Settings.essenceProfitableOnly),
 				new Control(() -> "Bazaar only: " + onOff(Settings.bazaarOnly),
 						() -> "Bazaar sales only (" + onOff(Settings.bazaarOnly) + "): hides items where something they turn into would have to be sold on the AH. "
 								+ "Shared with the NPC, Forge and Currency tabs.",
-						() -> Settings.bazaarOnly = !Settings.bazaarOnly),
+						d -> Settings.bazaarOnly = !Settings.bazaarOnly),
 				sortControl("Sort essence flips by", EssenceEngine.SORTS, () -> Settings.essenceSort, k -> Settings.essenceSort = k),
 				taxControl());
 	}

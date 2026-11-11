@@ -41,19 +41,19 @@ public class AdvisorScreen extends TableScreen<Advisor.Option> {
 		c.add(new Control(() -> "Show: " + (Settings.planSrc.equals("all") ? "Everything" : shortKind(Settings.planSrc)),
 				() -> "Show: " + (Settings.planSrc.equals("all") ? "every kind of idea" : "only " + Advisor.SRC.get(Settings.planSrc))
 						+ ". Click to step through flips, NPC flips, NPC shops, forge, books and crafts.",
-				() -> {
+				d -> {
 					List<String> keys = new ArrayList<>(List.of("all"));
 					keys.addAll(Advisor.SRC.keySet());
-					Settings.planSrc = keys.get((keys.indexOf(Settings.planSrc) + 1) % keys.size());
+					Settings.planSrc = Cycle.step(keys, Settings.planSrc, d);
 				}));
 		c.add(new Control(() -> "Buy: " + (Settings.moneyBuyOrder ? "Buy order" : "Insta-buy"),
 				() -> "Buy: how you buy on the Bazaar (shared with the NPC, Forge and Books tabs). Insta-buy = now, walking the order book. "
 						+ "Buy order = cheaper, but you wait (capped at about an hour of what the market trades).",
-				() -> Settings.moneyBuyOrder = !Settings.moneyBuyOrder));
+				d -> Settings.moneyBuyOrder = !Settings.moneyBuyOrder));
 		c.add(new Control(() -> "Sell: " + (Settings.moneySellOffer ? "Sell offer" : "Insta-sell"),
 				() -> "Sell: how results sell on the Bazaar, after tax. Insta-sell = now, into buy orders. Sell offer = list it and wait "
 						+ "(capped at about an hour of what the market trades).",
-				() -> { Settings.moneySellOffer = !Settings.moneySellOffer; MoneyData.syncSortFromSell(); }));
+				d -> { Settings.moneySellOffer = !Settings.moneySellOffer; MoneyData.syncSortFromSell(); }));
 		c.add(new Control(() -> "Leave out" + (Settings.planExSrc.size() + Settings.planEx.size() > 0
 				? ": " + (Settings.planExSrc.size() + Settings.planEx.size()) : ": none"),
 				() -> "Leave out kinds of ideas (flips, crafts...) or single items you don't want suggested. "
@@ -63,17 +63,17 @@ public class AdvisorScreen extends TableScreen<Advisor.Option> {
 		c.add(new Control(() -> "HotM: " + (Settings.forgeHotm == 0 ? "any" : Integer.toString(Settings.forgeHotm)),
 				() -> "Your Heart of the Mountain tier (" + (Settings.forgeHotm == 0 ? "any" : Settings.forgeHotm) + "): hides forge recipes that need "
 						+ "a higher tier and sets your forge slots (" + MoneyEngine.forgeSlots(Settings.forgeHotm) + "). Click to step 1-10, then any.",
-				() -> Settings.forgeHotm = (Settings.forgeHotm + 1) % 11));
+				d -> Settings.forgeHotm = Cycle.step(Settings.forgeHotm, 0, 10, d)));
 		c.add(new Control(() -> "NPCs: " + switch (Settings.npcAvail) { case "all" -> "All"; case "nomayor" -> "+situational"; default -> "Always there"; },
 				() -> "NPC shops: " + switch (Settings.npcAvail) {
 					case "all" -> "All: includes seasonal (event), mayor-only and situational NPCs.";
 					case "nomayor" -> "Hides seasonal (event) and mayor-only NPCs; shows situational ones.";
 					default -> "Always there: hides seasonal (event), mayor-only and situational NPCs.";
 				} + " Click to change.",
-				() -> Settings.npcAvail = switch (Settings.npcAvail) { case "always" -> "nomayor"; case "nomayor" -> "all"; default -> "always"; }));
+				d -> Settings.npcAvail = Cycle.step(List.of("always", "nomayor", "all"), Settings.npcAvail, d)));
 		c.add(new Control(() -> "Compactor: " + switch (Settings.compactor) { case ONLY -> "Only"; case HIDE -> "Hidden"; default -> "Any"; },
 				() -> "Personal Compactor crafts (shared with the Crafts tab): " + Settings.compactor.explanation + " Click to change.",
-				() -> Settings.compactor = Settings.Compactor.values()[(Settings.compactor.ordinal() + 1) % Settings.Compactor.values().length]));
+				d -> Settings.compactor = Cycle.step(Settings.compactor, d)));
 		c.add(taxControl());
 		return c;
 	}

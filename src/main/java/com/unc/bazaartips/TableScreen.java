@@ -23,16 +23,21 @@ abstract class TableScreen<T> extends BaseScreen {
 	protected record Column<T>(String header, String explanation, Function<T, String> value, ToIntFunction<T> color) {}
 
 	/** A setting button: its label and explanation (both re-read after every click), and what a click does. */
-	protected record Control(Supplier<String> label, Supplier<String> explanation, Runnable action, Supplier<String> boxValue,
+	protected record Control(Supplier<String> label, Supplier<String> explanation, Runnable action, Runnable back, Supplier<String> boxValue,
 			java.util.function.Consumer<String> onType) {
-		/** A button. */
+		/** A button that does one thing (opens a screen, clears a list): right click does nothing. */
 		public Control(Supplier<String> label, Supplier<String> explanation, Runnable action) {
-			this(label, explanation, action, null, null);
+			this(label, explanation, action, null, null, null);
+		}
+
+		/** A button that steps through options: step(+1) on a left click, step(-1) on a right click. */
+		public Control(Supplier<String> label, Supplier<String> explanation, java.util.function.IntConsumer step) {
+			this(label, explanation, () -> step.accept(1), () -> step.accept(-1), null, null);
 		}
 
 		/** A typing box: label() is the text beside it, boxValue() what's in it, onType() gets what you type. */
 		static Control box(String label, Supplier<String> value, java.util.function.Consumer<String> onType, Supplier<String> explanation) {
-			return new Control(() -> label, explanation, null, value, onType);
+			return new Control(() -> label, explanation, null, null, value, onType);
 		}
 
 		boolean isBox() {
@@ -191,14 +196,23 @@ abstract class TableScreen<T> extends BaseScreen {
 				controlButtons.add(null);
 				continue;
 			}
-			controlButtons.add(button(c.label().get(), cx, PAGE_TOP + controlY(i), controlW, b -> {
+			Button btn = button(c.label().get(), cx, PAGE_TOP + controlY(i), controlW, b -> {
 				c.action().run();
 				Settings.save();
 				if (minecraft.gui.screen() == this) {
 					relabelAll();
 					rebuild(true);
 				}
-			}));
+			});
+			if (c.back() != null) onRightClick(btn, () -> {
+				c.back().run();
+				Settings.save();
+				if (minecraft.gui.screen() == this) {
+					relabelAll();
+					rebuild(true);
+				}
+			});
+			controlButtons.add(btn);
 		}
 		int controlRows = (controls.size() + perRow - 1) / perRow;
 		controlsEnd = controlsPageY + controlRows * CONTROL_ROW + 2;
@@ -623,7 +637,7 @@ abstract class TableScreen<T> extends BaseScreen {
 	protected Control taxControl() {
 		return new Control(() -> "Tax: " + Settings.taxLabel(),
 				() -> "Bazaar tax: " + Settings.taxLabel() + " (shared by every tab). Click to step through 1.25% (base), 1.125% and 1% "
-						+ "(Bazaar Flipper upgrades). A custom tax can be typed in the Crafts tab's Filters & tax.",
-				Settings::nextTaxPreset);
+						+ "(Bazaar Flipper upgrades); right click goes back. A custom tax can be typed in the Crafts tab's Filters & tax.",
+				d -> Settings.stepTaxPreset(d));
 	}
 }

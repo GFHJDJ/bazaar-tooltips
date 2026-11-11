@@ -318,13 +318,12 @@ public final class Settings {
 
 	/** Steps the tax through the presets (1.25% -> 1.125% -> 1%); a custom tax goes back to 1.25%. */
 	public static void nextTaxPreset() {
-		for (int i = 0; i < TAX_PRESETS.length; i++) {
-			if (TAX_PRESETS[i] == taxPercent) {
-				taxPercent = TAX_PRESETS[(i + 1) % TAX_PRESETS.length];
-				return;
-			}
-		}
-		taxPercent = TAX_PRESETS[0];
+		stepTaxPreset(1);
+	}
+
+	/** The next (+1) or previous (-1) tax preset; a custom tax goes to the first (or last) preset. */
+	public static void stepTaxPreset(int dir) {
+		taxPercent = Cycle.step(TAX_PRESETS, taxPercent, dir);
 	}
 
 	private static <E extends Enum<E>> E enumOr(JsonObject o, String key, Class<E> type, E fallback) {

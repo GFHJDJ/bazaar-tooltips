@@ -21,11 +21,11 @@ public class FlipperScreen extends TableScreen<Flipper.Listed> {
 				new Control(() -> "Risky: " + (Settings.hideRisky ? "Hidden" : "Shown"),
 						() -> "Hide risky (" + onOff(Settings.hideRisky) + "): hides items whose order book looks manipulated "
 								+ "(an extreme spread with only a few orders). Risky ones that show are orange/red with '!'.",
-						() -> Settings.hideRisky = !Settings.hideRisky),
+						d -> Settings.hideRisky = !Settings.hideRisky),
 				new Control(() -> "Low vol: " + (Settings.hideLowVolume ? "Hidden" : "Shown"),
 						() -> "Hide low volume (" + onOff(Settings.hideLowVolume) + "): hides items with under 10k trades in the last 7 days "
 								+ "(the lower of insta-bought and insta-sold). Shared with the Crafts tab.",
-						() -> Settings.hideLowVolume = !Settings.hideLowVolume),
+						d -> Settings.hideLowVolume = !Settings.hideLowVolume),
 				Control.box("Min score", () -> Settings.flipMinScore == 0 ? "" : String.valueOf(Settings.flipMinScore), v -> {
 					try {
 						Settings.flipMinScore = v.isBlank() ? 0 : Math.max(0, Math.min(100, Integer.parseInt(v.trim())));

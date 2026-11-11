@@ -26,10 +26,10 @@ public class EarningsScreen extends TableScreen<Earnings.Row> {
 				new Control(() -> "Show: " + Earnings.periodLabel(Settings.earnPeriod),
 						() -> "Which trades count (" + Earnings.periodLabel(Settings.earnPeriod) + "): this session (since you started the game), "
 								+ "today (since midnight), the last 7 days, or all time. Click to change.",
-						() -> {
-							int i = 0;
-							for (int k = 0; k < Earnings.PERIODS.length; k++) if (Earnings.PERIODS[k][0].equals(Settings.earnPeriod)) i = k;
-							Settings.earnPeriod = Earnings.PERIODS[(i + 1) % Earnings.PERIODS.length][0];
+						d -> {
+							List<String> keys = new ArrayList<>();
+							for (String[] p : Earnings.PERIODS) keys.add(p[0]);
+							Settings.earnPeriod = Cycle.step(keys, Settings.earnPeriod, d);
 						}),
 				new Control(() -> armed() ? "Click again to forget" : "Forget trades",
 						() -> "Deletes every trade written down so far (all time, not just the ones shown). It can't be undone. Click twice to confirm.",

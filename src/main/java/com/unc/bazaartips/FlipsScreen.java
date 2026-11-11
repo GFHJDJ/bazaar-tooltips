@@ -21,7 +21,7 @@ public class FlipsScreen extends TableScreen<CraftEngine.Craft> {
 				new Control(() -> "Buy: " + Settings.buy.label,
 						() -> "Buy: how ingredients are bought. Insta-buy = now, at the cheapest sell offer. "
 								+ "Buy order = 0.1 above the top buy order: cheaper, but you wait for it to fill. (The site's two Craft tabs.)",
-						() -> Settings.buy = Settings.buy == Settings.Buy.INSTA ? Settings.Buy.ORDER : Settings.Buy.INSTA),
+						d -> Settings.buy = Settings.buy == Settings.Buy.INSTA ? Settings.Buy.ORDER : Settings.Buy.INSTA),
 				new Control(() -> "Sort: " + CraftEngine.sortOption(Settings.sort).shortLabel(),
 						() -> "Sort: " + CraftEngine.sortOption(Settings.sort).label() + ". " + CraftEngine.sortOption(Settings.sort).explanation()
 								+ " Click to choose another.",

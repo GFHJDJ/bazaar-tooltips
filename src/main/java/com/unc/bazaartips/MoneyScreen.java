@@ -34,21 +34,21 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 		return new Control(() -> "Buy: " + (Settings.moneyBuyOrder ? "Buy order" : "Insta-buy"),
 				() -> "Buy: how " + (kind().equals("npc") ? "you buy on the Bazaar" : "materials are bought") + ". Insta-buy = now, at Hypixel's "
 						+ "averaged sell-offer price (big amounts walk the order book). Buy order = at the averaged buy-order price: cheaper, but you wait.",
-				() -> Settings.moneyBuyOrder = !Settings.moneyBuyOrder);
+				d -> Settings.moneyBuyOrder = !Settings.moneyBuyOrder);
 	}
 
 	private Control sellControl() {
 		return new Control(() -> "Sell: " + (Settings.moneySellOffer ? "Sell offer" : "Insta-sell"),
 				() -> "Sell: how the result sells on the Bazaar, after tax. Insta-sell = now, into buy orders (big amounts walk the order book). "
 						+ "Sell offer = list it at the averaged sell-offer price and wait.",
-				() -> { Settings.moneySellOffer = !Settings.moneySellOffer; MoneyData.syncSortFromSell(); });
+				d -> { Settings.moneySellOffer = !Settings.moneySellOffer; MoneyData.syncSortFromSell(); });
 	}
 
 	private Control bazaarOnlyControl() {
 		return new Control(() -> "Bazaar only: " + onOff(Settings.bazaarOnly),
 				() -> "Bazaar sales only (" + onOff(Settings.bazaarOnly) + "): hides results you'd have to sell on the Auction House. "
 						+ "Off: those are valued at the AH lowest BIN (before AH fees), and listings may take a while to sell.",
-				() -> Settings.bazaarOnly = !Settings.bazaarOnly);
+				d -> Settings.bazaarOnly = !Settings.bazaarOnly);
 	}
 
 	@Override
@@ -59,9 +59,9 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 			c.add(new Control(() -> "Currency: " + curNames()[0].replace(" (bought with real money)", ""),
 					() -> "Currency: " + curNames()[0] + ". What you're spending. Click to step through copper, medals, pelts, North Stars, pests, "
 							+ "Rusty Coins, Bingo Points, kernels, Carnival Tokens and Gems.",
-					() -> {
+					d -> {
 						List<String> keys = new ArrayList<>(MoneyEngine.CURRENCIES.keySet());
-						Settings.curType = keys.get((keys.indexOf(Settings.curType) + 1) % keys.size());
+						Settings.curType = Cycle.step(keys, Settings.curType, d);
 						if (!List.of("per", "value", "amt", "name").contains(Settings.curSort)) Settings.curSort = "per";
 					}));
 		} else if (kind.equals("books")) {
@@ -70,12 +70,12 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 			c.add(new Control(() -> "HotM: " + (Settings.forgeHotm == 0 ? "any" : Integer.toString(Settings.forgeHotm)),
 					() -> "Your Heart of the Mountain tier (" + (Settings.forgeHotm == 0 ? "any" : Settings.forgeHotm) + "): hides recipes that need a "
 							+ "higher tier and sets your forge slots (" + MoneyEngine.forgeSlots(Settings.forgeHotm) + "). Click to step 1-10, then any.",
-					() -> Settings.forgeHotm = (Settings.forgeHotm + 1) % 11));
+					d -> Settings.forgeHotm = Cycle.step(Settings.forgeHotm, 0, 10, d)));
 		} else {
 			c.add(new Control(() -> kind().equals("shop") ? "View: NPC shop" : "View: Bazaar>NPC",
 					() -> "View: " + (kind().equals("shop") ? "NPC shop -> Bazaar/AH: buy from an NPC shop, sell on the Bazaar or AH."
 							: "Bazaar -> NPC: buy on the Bazaar, sell to an NPC.") + " Click to switch.",
-					() -> {
+					d -> {
 						Settings.npcView = Settings.npcView.equals("shop") ? "bz" : "shop";
 						Settings.save();
 						minecraft.gui.setScreen(new MoneyScreen(tab)); // the buttons change with the view
@@ -93,7 +93,7 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 						case "nomayor" -> "Hides seasonal (event) and mayor-only NPCs; shows situational ones (only in some places or moments).";
 						default -> "Always there: hides seasonal (event), mayor-only and situational NPCs.";
 					} + " From the Hypixel SkyBlock Wiki. Click to change.",
-					() -> Settings.npcAvail = switch (Settings.npcAvail) { case "always" -> "nomayor"; case "nomayor" -> "all"; default -> "always"; }));
+					d -> Settings.npcAvail = Cycle.step(List.of("always", "nomayor", "all"), Settings.npcAvail, d)));
 		}
 		c.add(sortControl());
 		c.add(taxControl());

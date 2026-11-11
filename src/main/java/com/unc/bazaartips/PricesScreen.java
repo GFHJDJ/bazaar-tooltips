@@ -16,7 +16,7 @@ public class PricesScreen extends TableScreen<MoneyData.PriceItem> {
 				new Control(() -> "Low vol: " + (Settings.hideLowVolume ? "Hidden" : "Shown"),
 						() -> "Hide low volume (" + onOff(Settings.hideLowVolume) + "): hides items with under 10k trades in the last 7 days "
 								+ "(the lower of insta-bought and insta-sold). Shared with the Crafts and Flipper tabs.",
-						() -> Settings.hideLowVolume = !Settings.hideLowVolume));
+						d -> Settings.hideLowVolume = !Settings.hideLowVolume));
 	}
 
 	@Override

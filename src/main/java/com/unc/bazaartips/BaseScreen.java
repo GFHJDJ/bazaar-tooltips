@@ -5,6 +5,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.util.List;
+
 /** What every screen in the mod shares: the dark panel, the Rounded toggle, and "hover anything to see what it means". */
 abstract class BaseScreen extends Screen {
 	static final int ROUNDED_BUTTON_WIDTH = 74;
@@ -12,6 +14,8 @@ abstract class BaseScreen extends Screen {
 			+ "Off shows every digit, like 162,844.8. Applies to these screens and item tooltips.";
 
 	protected final Screen parent;
+	/** Buttons that do something on a right click (step back through their options), and what. */
+	private final java.util.Map<Button, Runnable> rightClicks = new java.util.IdentityHashMap<>();
 	protected final Explain explain = new Explain();
 	protected int left;
 	protected int tableWidth;
@@ -146,12 +150,36 @@ abstract class BaseScreen extends Screen {
 
 	protected void addRoundedToggle(int y, Runnable afterChange) {
 		int x = left + tableWidth - ROUNDED_BUTTON_WIDTH;
-		addRenderableWidget(Button.builder(Component.literal(roundedLabel()), b -> {
+		Button.OnPress toggle = b -> {
 			Format.setRounded(!Format.rounded());
 			Settings.save();
 			b.setMessage(Component.literal(roundedLabel()));
 			afterChange.run();
-		}).pos(x, y).size(ROUNDED_BUTTON_WIDTH, 14).build());
+		};
+		Button r = addRenderableWidget(Button.builder(Component.literal(roundedLabel()), toggle).pos(x, y).size(ROUNDED_BUTTON_WIDTH, 14).build());
+		onRightClick(r, () -> toggle.onPress(r));
+	}
+
+	/** Makes a right click on this button do `back` (left click keeps doing what it always did). Returns the button. */
+	protected Button onRightClick(Button b, Runnable back) {
+		rightClicks.put(b, back);
+		return b;
+	}
+
+	/** Right click on a button that steps through options: go back one. Minecraft's buttons only listen to left clicks. */
+	@Override
+	public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+		if (event.button() == 1) {
+			for (var e : List.copyOf(rightClicks.entrySet())) {
+				Button b = e.getKey();
+				if (b.visible && b.active && b.isMouseOver(event.x(), event.y()) && children().contains(b)) {
+					b.playDownSound(minecraft.getSoundManager());
+					e.getValue().run();
+					return true;
+				}
+			}
+		}
+		return super.mouseClicked(event, doubleClick);
 	}
 
 	/** Registers the Rounded button's explanation; call each frame after explain.clear(). */

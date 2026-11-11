@@ -66,6 +66,8 @@ uses your mix. Reset puts them all back. Your choices last until you close the g
   or one order controlling the book), on the item or one of its ingredients.
 - **Rounded: On / Off** (top-right): short numbers (162.8k) or every digit (162,844.8), everywhere.
 - **Hover anything** (a column name, a box, a button) to see what it means. **Click a row** for details.
+- **Buttons that step through options** (Sort aside, which opens a list): left click goes to the next one, **right
+  click goes back** to the one before. Works on every tab, the gear's settings and Filters & tax.
 - Your settings are saved in `config/bazaartips.json`, so they're still there next time.
 
 ### Details screen (the site's open craft card)
@@ -260,7 +262,7 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.15.0.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.15.1.jar`.
 
 The build also runs the tests in `src/test` (prices, risk warnings, flips, crafts, NPC and forge math, the advisor,
 best amounts, order tracking, alerts, earnings). If one
@@ -269,7 +271,7 @@ fails, the build fails and no jar is made, here and on GitHub.
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.15.0.jar`
+- `bazaar-tooltips-0.15.1.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)

@@ -37,29 +37,35 @@ public class FiltersScreen extends BaseScreen {
 
 		line("Low volume", y, "Low volume: hide crafts whose result traded under 10,000 in the last 7 days (the lower of insta-bought "
 				+ "and insta-sold). Those are slow to sell and easier to manipulate.");
-		cycle(y, () -> "Low volume: " + (Settings.hideLowVolume ? "Hidden" : "Shown"), () -> Settings.hideLowVolume = !Settings.hideLowVolume);
+		cycle(y, () -> "Low volume: " + (Settings.hideLowVolume ? "Hidden" : "Shown"), d -> Settings.hideLowVolume = !Settings.hideLowVolume);
 		y += step;
 
 		line("Craft chains", y, "Craft chains: " + "Off = " + Settings.Chains.EXCLUDE.explanation + " On = " + Settings.Chains.ALL.explanation
 				+ " Only chains = " + Settings.Chains.ONLY.explanation);
-		cycle(y, () -> "Chains: " + Settings.chains.label, () -> Settings.chains = next(Settings.chains));
+		cycle(y, () -> "Chains: " + Settings.chains.label, d -> Settings.chains = Cycle.step(Settings.chains, d));
 		y += step;
 
 		line("Personal Compactor", y, "Personal Compactor: " + Settings.Compactor.ONLY.explanation + " / " + Settings.Compactor.HIDE.explanation);
-		cycle(y, () -> "Compactor: " + Settings.compactor.label, () -> Settings.compactor = next(Settings.compactor));
+		cycle(y, () -> "Compactor: " + Settings.compactor.label, d -> Settings.compactor = Cycle.step(Settings.compactor, d));
 		y += step;
 
 		line("Requirements", y, "Requirements: " + Settings.Reqs.NONE.explanation + " " + Settings.Reqs.UNLOCKED.explanation);
-		cycle(y, () -> "Requirements: " + Settings.reqs.label, () -> Settings.reqs = next(Settings.reqs));
+		cycle(y, () -> "Requirements: " + Settings.reqs.label, d -> Settings.reqs = Cycle.step(Settings.reqs, d));
 		y += step;
 
 		line("Bazaar tax", y, "Bazaar tax: what the bazaar keeps from every sale. 1.25% is the base; the Bazaar Flipper upgrade "
 				+ "lowers it to 1.125% or 1%. Use Custom when a mayor changes it. Used for every profit.");
 		int half = controlW / 2 - 2;
-		button(taxLabel(), controlX, y, half, b -> {
-			Settings.taxPercent = nextTax();
+		Button taxBtn = button(taxLabel(), controlX, y, half, b -> {
+			Settings.stepTaxPreset(1);
 			Settings.save();
 			relabel(b, taxLabel(), half);
+			customTax.setValue(trim(Settings.taxPercent));
+		});
+		onRightClick(taxBtn, () -> {
+			Settings.stepTaxPreset(-1);
+			Settings.save();
+			relabel(taxBtn, taxLabel(), half);
 			customTax.setValue(trim(Settings.taxPercent));
 		});
 		customTax = addRenderableWidget(new EditBox(font, controlX + half + 4, y + 2, controlW - half - 4, 16, Component.literal("Custom tax %")));
@@ -91,11 +97,8 @@ public class FiltersScreen extends BaseScreen {
 
 		if (UnlockLookup.profiles.size() > 1) {
 			line("Profile", y, "Profile: which of your SkyBlock profiles to load unlocks from. Click to switch and reload.");
-			cycle(y, () -> "Profile: " + Settings.lookupProfile, () -> {
-				List<String> p = UnlockLookup.profiles;
-				int i = p.indexOf(Settings.lookupProfile);
-				UnlockLookup.start(nameBox.getValue(), p.get((i + 1) % p.size()));
-			});
+			cycle(y, () -> "Profile: " + Settings.lookupProfile,
+					d -> UnlockLookup.start(nameBox.getValue(), Cycle.step(UnlockLookup.profiles, Settings.lookupProfile, d)));
 			y += step;
 		}
 		statusY = y + 2;
@@ -106,18 +109,18 @@ public class FiltersScreen extends BaseScreen {
 		lines.add(new Line(label, y, explanation));
 	}
 
-	/** A button that cycles a setting, saves, and relabels itself. */
-	private void cycle(int y, java.util.function.Supplier<String> label, Runnable change) {
-		button(label.get(), controlX, y, controlW, b -> {
-			change.run();
+	/** A button that steps a setting forward (left click) or back (right click), saves, and relabels itself. */
+	private void cycle(int y, java.util.function.Supplier<String> label, java.util.function.IntConsumer step) {
+		Button btn = button(label.get(), controlX, y, controlW, b -> {
+			step.accept(1);
 			Settings.save();
 			relabel(b, label.get(), controlW);
 		});
-	}
-
-	private static <E extends Enum<E>> E next(E e) {
-		E[] all = e.getDeclaringClass().getEnumConstants();
-		return all[(e.ordinal() + 1) % all.length];
+		onRightClick(btn, () -> {
+			step.accept(-1);
+			Settings.save();
+			relabel(btn, label.get(), controlW);
+		});
 	}
 
 	private static String taxLabel() {
@@ -126,12 +129,6 @@ public class FiltersScreen extends BaseScreen {
 	}
 
 	/** 1.25 -> 1.125 -> 1 -> (custom: whatever's typed) -> 1.25 */
-	private static double nextTax() {
-		double[] p = Settings.TAX_PRESETS;
-		for (int i = 0; i < p.length; i++) if (p[i] == Settings.taxPercent) return p[(i + 1) % p.length];
-		return p[0];
-	}
-
 	private static String trim(double v) {
 		return String.format(Locale.US, "%.3f", v).replaceAll("0+$", "").replaceAll("\\.$", "");
 	}

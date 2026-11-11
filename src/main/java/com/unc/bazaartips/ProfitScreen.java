@@ -9,11 +9,6 @@ public class ProfitScreen extends TableScreen<MinionEngine.Profit> {
 		super("Profit / hr", "profit");
 	}
 
-	private static <T> T next(List<T> list, T cur) {
-		int i = list.indexOf(cur);
-		return list.get((i + 1) % list.size());
-	}
-
 	static String hopperShort(String h) {
 		return switch (h) {
 			case "Budget Hopper (50% NPC)" -> "Budget (50%)";
@@ -34,18 +29,18 @@ public class ProfitScreen extends TableScreen<MinionEngine.Profit> {
 		c.add(new Control(() -> "Tier " + SiteData.roman(Settings.profitTier),
 				() -> "Minion tier " + SiteData.roman(Settings.profitTier) + ": the tier every minion is compared at (a minion that doesn't go that high "
 						+ "shows its top tier, marked). Click to step I-XII.",
-				() -> Settings.profitTier = Settings.profitTier % 12 + 1));
+				d -> Settings.profitTier = Cycle.step(Settings.profitTier, 1, 12, d)));
 		c.add(new Control(() -> "Sell to: " + switch (Settings.profitSell) { case "bz" -> "Bazaar"; case "npc" -> "NPC"; default -> "Best"; },
 				() -> "Where drops are sold. Best = whichever of NPC and Bazaar pays more for each item; Bazaar = Bazaar (NPC* when it isn't on the "
 						+ "Bazaar); NPC = always the NPC price.",
-				() -> Settings.profitSell = switch (Settings.profitSell) { case "best" -> "bz"; case "bz" -> "npc"; default -> "best"; }));
+				d -> Settings.profitSell = Cycle.step(List.of("best", "bz", "npc"), Settings.profitSell, d)));
 		c.add(new Control(() -> "Bazaar: " + (Settings.moneySellOffer ? "Sell offer" : "Insta-sell"),
 				() -> "How drops sell on the Bazaar, after tax: insta-sell (now) or sell offer (more, but you wait). Shared with the NPC, Forge and Books tabs.",
-				() -> { Settings.moneySellOffer = !Settings.moneySellOffer; MoneyData.syncSortFromSell(); }));
+				d -> { Settings.moneySellOffer = !Settings.moneySellOffer; MoneyData.syncSortFromSell(); }));
 		c.add(new Control(() -> "Auto: " + onOff(Settings.profitAuto),
 				() -> "Auto-pick (" + onOff(Settings.profitAuto) + "): picks the best fuel and two upgrades for each minion (permanent fuels only). "
 						+ "Off: you choose the fuel and upgrades for every minion.",
-				() -> {
+				d -> {
 					Settings.profitAuto = !Settings.profitAuto;
 					Settings.save();
 					minecraft.gui.setScreen(new ProfitScreen()); // the buttons change
@@ -61,24 +56,24 @@ public class ProfitScreen extends TableScreen<MinionEngine.Profit> {
 			List<String> fuels = new ArrayList<>(MinionEngine.FUELS.keySet());
 			c.add(new Control(() -> "Fuel: " + Settings.profitFuel,
 					() -> "Fuel: " + Settings.profitFuel + ". Speeds the minion up (or multiplies drops, for catalysts). Click for the next one.",
-					() -> Settings.profitFuel = next(fuels, Settings.profitFuel)));
+					d -> Settings.profitFuel = Cycle.step(fuels, Settings.profitFuel, d)));
 			c.add(new Control(() -> "Up 1: " + Settings.profitUp1,
 					() -> "Upgrade slot 1: " + Settings.profitUp1 + ". Click for the next one.",
-					() -> Settings.profitUp1 = next(MinionEngine.UPGRADES, Settings.profitUp1)));
+					d -> Settings.profitUp1 = Cycle.step(MinionEngine.UPGRADES, Settings.profitUp1, d)));
 			c.add(new Control(() -> "Up 2: " + Settings.profitUp2,
 					() -> "Upgrade slot 2: " + Settings.profitUp2 + ". Click for the next one.",
-					() -> Settings.profitUp2 = next(MinionEngine.UPGRADES, Settings.profitUp2)));
+					d -> Settings.profitUp2 = Cycle.step(MinionEngine.UPGRADES, Settings.profitUp2, d)));
 		}
 		List<String> hoppers = new ArrayList<>(MinionEngine.HOPPERS.keySet());
 		c.add(new Control(() -> "Hopper: " + hopperShort(Settings.profitHopper),
 				() -> "Hopper: " + Settings.profitHopper + ". A hopper sells to the NPC automatically, for part of the NPC price. Sources disagree on the "
 						+ "Enchanted Hopper (70% on Hypixel's wiki, 90% elsewhere), so both are offered.",
-				() -> Settings.profitHopper = next(hoppers, Settings.profitHopper)));
+				d -> Settings.profitHopper = Cycle.step(hoppers, Settings.profitHopper, d)));
 		List<String> chests = new ArrayList<>();
 		for (String[] ch : MinionEngine.CHESTS) chests.add(ch[0]);
 		c.add(new Control(() -> "Chest: " + chestName(Settings.profitChest).replace(" Storage", "").replace("No storage chest", "none"),
 				() -> "Storage chest next to the minion: " + chestName(Settings.profitChest) + ". Adds slots, so it fills up later.",
-				() -> Settings.profitChest = next(chests, Settings.profitChest)));
+				d -> Settings.profitChest = Cycle.step(chests, Settings.profitChest, d)));
 		c.add(sortControl("Sort minions by", MinionEngine.PROFIT_SORTS, () -> Settings.profitSort, k -> Settings.profitSort = k));
 		c.add(taxControl());
 		return c;

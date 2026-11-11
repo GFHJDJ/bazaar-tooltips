@@ -15,7 +15,7 @@ public class OrdersScreen extends TableScreen<OrderTracker.Check> {
 				new Control(() -> "Alerts: " + onOff(Settings.orderAlerts),
 						() -> "Chat alerts (" + onOff(Settings.orderAlerts) + "): a message when one of your buy orders is outbid or a sell offer is "
 								+ "undercut, checked every time prices refresh (about once a minute). Each order alerts once until it's back on top.",
-						() -> Settings.orderAlerts = !Settings.orderAlerts),
+						d -> Settings.orderAlerts = !Settings.orderAlerts),
 				new Control(() -> "Forget orders",
 						() -> "Clears the list. It fills again the next time you open /bz -> Manage Orders.",
 						OrderTracker::clear));
