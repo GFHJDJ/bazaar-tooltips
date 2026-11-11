@@ -3,7 +3,7 @@
 	"id": "bazaartips",
 	"version": "${version}",
 	"name": "Bazaar Tooltips",
-	"description": "Shows live Hypixel Skyblock bazaar prices in item tooltips.",
+	"description": "Hypixel Skyblock bazaar helper: live prices in item tooltips, a panel in /bz, order tracking with outbid alerts, and a screen (press B) of crafts, flips, NPC, forge, minion and essence money-makers.",
 	"authors": ["Unc"],
 	"license": "CC0-1.0",
 	"icon": "assets/bazaartips/icon.png",

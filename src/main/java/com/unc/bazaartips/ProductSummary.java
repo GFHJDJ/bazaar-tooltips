@@ -31,8 +31,10 @@ public final class ProductSummary {
 		BazaarPrices.Price p = BazaarPrices.get(id);
 		if (p == null) return out;
 		out.add(new Line(SiteData.prettyName(id), Colors.WHITE, "", 0, false));
-		out.add(Line.kv("Insta-buy", Format.price(p.quickBuy()), Colors.YELLOW));
-		out.add(Line.kv("Insta-sell", Format.price(p.quickSell()), Colors.YELLOW));
+		// The same numbers as the item tooltip: the top of the live order book (not Hypixel's averaged price).
+		double instaBuy = p.instaBuy(), instaSell = p.instaSell();
+		out.add(Line.kv("Insta-buy", Format.price(instaBuy), Colors.YELLOW));
+		out.add(Line.kv("Insta-sell", Format.price(instaSell), Colors.YELLOW));
 		out.add(Line.kv("Traded / week", Format.amount(Math.min(p.buyMovingWeek(), p.sellMovingWeek())), Colors.GRAY));
 		Risk risk = Risk.of(p);
 		if (!risk.reasons().isEmpty()) out.add(Line.note("! " + risk.reasons().get(0), risk.level() == Risk.Level.HIGH ? Colors.RED : Colors.ORANGE));
@@ -75,7 +77,7 @@ public final class ProductSummary {
 		if (npc != null && npc > 0) {
 			out.add(Line.head("NPC"));
 			out.add(Line.kv("NPC pays", Format.price(npc), Colors.YELLOW));
-			if (p.quickBuy() > 0 && npc > p.quickBuy()) out.add(Line.kv("Buy here, sell to NPC", Format.signedCoins(npc - p.quickBuy()) + " each", Colors.GREEN));
+			if (instaBuy > 0 && npc > instaBuy) out.add(Line.kv("Buy here, sell to NPC", Format.signedCoins(npc - instaBuy) + " each", Colors.GREEN));
 		}
 
 		// ---- your orders on it ----

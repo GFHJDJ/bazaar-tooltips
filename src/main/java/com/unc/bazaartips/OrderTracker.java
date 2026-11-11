@@ -133,8 +133,26 @@ public final class OrderTracker {
 	private static long updatedAt = 0;
 	private static Path file;
 
+	/** Goes up whenever the list of orders changes, so screens know to redraw. */
+	private static volatile long version = 0;
+
+	public static long version() {
+		return version;
+	}
+
 	public static synchronized List<Order> orders() {
 		return List.copyOf(orders);
+	}
+
+	/** One key per order, in list order. Two identical orders get "...", "...#2", so each keeps its own status. */
+	static List<String> keys(List<Order> list) {
+		Map<String, Integer> seen = new HashMap<>();
+		List<String> out = new ArrayList<>(list.size());
+		for (Order o : list) {
+			int n = seen.merge(o.key(), 1, Integer::sum);
+			out.add(n == 1 ? o.key() : o.key() + "#" + n);
+		}
+		return out;
 	}
 
 	/** When you last opened Manage Orders (0 = never). */
@@ -149,7 +167,8 @@ public final class OrderTracker {
 				o.price(), o.claimable(), o.seenAt()) : o);
 		orders = fixed;
 		updatedAt = System.currentTimeMillis();
-		last.keySet().retainAll(fixed.stream().map(Order::key).toList());
+		last.keySet().retainAll(keys(fixed));
+		version++;
 		save();
 	}
 
@@ -157,6 +176,7 @@ public final class OrderTracker {
 		orders = new ArrayList<>();
 		last.clear();
 		updatedAt = 0;
+		version++;
 		save();
 	}
 
@@ -189,13 +209,79 @@ public final class OrderTracker {
 	 */
 	public static synchronized List<Check> newlyOutbid(Function<String, BazaarPrices.Price> prices) {
 		List<Check> out = new ArrayList<>();
-		for (Order o : orders) {
-			Check c = check(o, prices);
-			Status before = last.put(o.key(), c.status());
+		List<String> keys = keys(orders);
+		boolean changed = false;
+		for (int i = 0; i < orders.size(); i++) {
+			Check c = check(orders.get(i), prices);
+			Status before = last.put(keys.get(i), c.status());
+			if (before != c.status()) changed = true;
 			if (c.status() == Status.OUTBID && before != Status.OUTBID) out.add(c);
 		}
-		save();
+		if (changed) save();                         // only write the file when a status actually changed
 		return out;
+	}
+
+	// ---- Hypixel's own bazaar chat messages: keep the list right between visits to Manage Orders ----
+
+	private static final Pattern CHAT_FILLED = Pattern.compile("^\\[Bazaar] Your (Buy Order|Sell Offer) for ([\\d,]+)x (.+?) was filled!$");
+	private static final Pattern CHAT_CLAIM_BUY = Pattern.compile("^\\[Bazaar] Claimed ([\\d,]+)x (.+?) worth .+ bought for .+$");
+	private static final Pattern CHAT_CLAIM_SELL = Pattern.compile("^\\[Bazaar] Claimed .+ coins? from selling ([\\d,]+)x (.+?) at .+$");
+
+	/**
+	 * Reads one chat line. "Your Buy Order for 64x Diamond was filled!" marks that order Filled (so it stops showing
+	 * as outbid just because it's no longer in the order book); claiming a whole filled order removes it. Anything
+	 * else, or a message that matches none of your orders, changes nothing. Returns true if the list changed.
+	 */
+	public static synchronized boolean onChat(String message) {
+		String msg = strip(message);
+		if (!msg.startsWith("[Bazaar]")) return false;
+		Matcher m;
+		if ((m = CHAT_FILLED.matcher(msg)).matches()) {
+			Type type = m.group(1).equals("Buy Order") ? Type.BUY : Type.SELL;
+			int i = find(type, m.group(3), number(m.group(2)), false);
+			if (i < 0) return false;
+			Order o = orders.get(i);
+			List<String> before = keys(orders);
+			orders.set(i, new Order(o.type(), o.name(), o.productId(), o.amount(), o.amount(), true, o.price(),
+					(int) Math.min(Integer.MAX_VALUE, o.amount()), o.seenAt()));
+			rekey(before);
+			return true;
+		}
+		boolean buy = (m = CHAT_CLAIM_BUY.matcher(msg)).matches();
+		if (buy || (m = CHAT_CLAIM_SELL.matcher(msg)).matches()) {
+			int i = find(buy ? Type.BUY : Type.SELL, m.group(2), number(m.group(1)), true);
+			if (i < 0) return false;
+			List<String> before = keys(orders);
+			before.remove(i);
+			orders.remove(i);
+			rekey(before);
+			return true;
+		}
+		return false;
+	}
+
+	/** The first order of this kind, item and size; full = only a filled one (a claim), otherwise only an unfilled one. */
+	private static int find(Type type, String name, long amount, boolean full) {
+		String want = norm(name);
+		for (int i = 0; i < orders.size(); i++) {
+			Order o = orders.get(i);
+			if (o.type() == type && o.amount() == amount && o.full() == full && norm(o.name()).equals(want)) return i;
+		}
+		return -1;
+	}
+
+	/** After the list changed: carry each order's last status over to its new key, then save. */
+	private static void rekey(List<String> before) {
+		List<String> after = keys(orders);
+		Map<String, Status> moved = new HashMap<>();
+		for (int i = 0; i < after.size() && i < before.size(); i++) {
+			Status s = last.get(before.get(i));
+			if (s != null) moved.put(after.get(i), s);
+		}
+		last.clear();
+		last.putAll(moved);
+		version++;
+		save();
 	}
 
 	/** The chat alert for an outbid order, as plain text parts: {headline, detail}. */
@@ -268,5 +354,6 @@ public final class OrderTracker {
 		updatedAt = 0;
 		file = null;
 		indexFor = -1;
+		version++;
 	}
 }

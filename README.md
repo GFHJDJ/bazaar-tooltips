@@ -186,7 +186,11 @@ minute) it checks each one against the live order book. When someone beats your 
 your sell offer, you get one chat message (click **[/bz]** in it to open that item). The **Orders** tab lists
 your orders, the ones that need you first at the top: Outbid / Undercut, Tied (someone has the same price),
 Filled (claim it), Top. Hover one for the price to re-place it at. **Alerts** turns the chat messages on or
-off; **Forget orders** clears the list. Reopen Manage Orders after you change orders so the list stays right.
+off; **Forget orders** clears the list.
+
+The mod also reads Hypixel's own bazaar chat lines: "Your Buy Order for 64x Diamond was filled!" marks that order
+Filled straight away (so it isn't called outbid just because it left the order book), and claiming a filled order
+takes it off the list. New and cancelled orders still need a visit to Manage Orders to show up or go away.
 
 ## Shopping list for your coins & slots
 
@@ -197,7 +201,7 @@ Enter your coins and/or free slots at the top of any list. Then:
 
 ## Panel in the bazaar
 
-Open any item in /bz and a panel appears beside the chest: insta-buy / insta-sell, weekly volume and
+Open any item in /bz and a panel appears beside the chest: insta-buy / insta-sell (the same numbers as the item tooltip), weekly volume and
 warnings; the flip (buy order and sell offer prices, profit each, trades per hour, flip score); crafting it
 (cost and profit, by insta-buy and by buy orders); what an NPC pays; and your own orders on that item with
 their status. It needs room beside the chest; if it doesn't show, try a smaller GUI scale.
@@ -237,12 +241,15 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.14.0.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.14.1.jar`.
+
+The build also runs the tests in `src/test` (prices, risk warnings, flip math, order tracking, alerts). If one
+fails, the build fails and no jar is made, here and on GitHub.
 
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.14.0.jar`
+- `bazaar-tooltips-0.14.1.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
@@ -274,6 +281,7 @@ Open the folder in IntelliJ IDEA, let it import, then run the Gradle task `runCl
   `ProfitScreen.java`, `ProfitDetailScreen.java`, `ProfitPickScreen.java`, `EssenceScreen.java`, `EssenceDetailScreen.java`,
   `Explain.java` - the screens.
 - `Format.java` - number formatting. `Colors.java` - screen colors.
+- `src/test/java/...` - the tests that run on every build.
 - `tools/import_site_recipes.py` - copies the recipes, forge recipes and NPC shops from your site file again
   after you update the site:
   `python tools/import_site_recipes.py path/to/bazaar-vNN.html`

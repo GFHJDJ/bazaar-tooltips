@@ -112,6 +112,12 @@ public final class BazaarPrices {
 		return fetchedAtMillis;
 	}
 
+	/** For tests: puts these prices in as if they had just been downloaded. */
+	static void setForTests(Map<String, Price> p) {
+		prices = Map.copyOf(p);
+		fetchedAtMillis = System.currentTimeMillis();
+	}
+
 	static void refresh() {
 		// Every error is caught here: an uncaught one would stop the timer for good.
 		try {
@@ -134,7 +140,7 @@ public final class BazaarPrices {
 		try {
 			HttpRequest request = HttpRequest.newBuilder(url)
 					.timeout(Duration.ofSeconds(30))
-					.header("User-Agent", "BazaarTooltips/0.14")
+					.header("User-Agent", "BazaarTooltips/0.14.1")
 					.GET()
 					.build();
 			HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());

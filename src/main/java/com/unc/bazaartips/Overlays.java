@@ -32,6 +32,14 @@ final class Overlays {
 	// ---- the panel beside a bazaar item's page ----
 
 	private static String lastQueued = "";
+	private static String panelStamp = "", orderStamp = "";
+	private static List<ProductSummary.Line> panelLines = List.of(), orderLinesCache = List.of();
+
+	/** Everything the two boxes depend on. They're rebuilt when this changes (new prices, orders, settings), not every frame. */
+	private static String stamp() {
+		return BazaarPrices.lastFetchMillis() + "|" + CoflData.version() + "|" + OrderTracker.version() + "|" + Settings.tax() + "|"
+				+ Settings.chains + "|" + Format.rounded();
+	}
 
 	/** A bazaar product page: its title has "➜" in it (e.g. "Mining ➜ Diamond") and the product is in slot 13. */
 	static String productOnScreen(AbstractContainerScreen<?> c) {
@@ -66,9 +74,14 @@ final class Overlays {
 		int w = Math.min(room, 200);
 		int x = rightRoom >= leftRoom ? rightX : (sw - chest) / 2 - 6 - w;
 		int y = Math.max(4, (sh - 222) / 2);
-		List<ProductSummary.Line> lines = new ArrayList<>(ProductSummary.build(id));
-		lines.add(new ProductSummary.Line("Bazaar Tooltips · " + SettingsScreen.keyName() + " for more", Colors.DARK_GRAY, "", 0, false));
-		panel(g, font, x, y, w, lines, sh - 4);
+		String st = id + "|" + stamp() + "|" + SettingsScreen.keyName();
+		if (!st.equals(panelStamp)) {
+			List<ProductSummary.Line> lines = new ArrayList<>(ProductSummary.build(id));
+			lines.add(new ProductSummary.Line("Bazaar Tooltips · " + SettingsScreen.keyName() + " for more", Colors.DARK_GRAY, "", 0, false));
+			panelLines = lines;
+			panelStamp = st;
+		}
+		panel(g, font, x, y, w, panelLines, sh - 4);
 	}
 
 	/**
@@ -123,7 +136,17 @@ final class Overlays {
 
 	static final String[][] CORNERS = {{"top-left", "Top left"}, {"top-right", "Top right"}, {"middle-left", "Middle left"}};
 
+	/** The orders box's lines, rebuilt only when prices, orders or settings change. */
 	static List<ProductSummary.Line> orderLines() {
+		String st = stamp();
+		if (!st.equals(orderStamp)) {
+			orderLinesCache = buildOrderLines();
+			orderStamp = st;
+		}
+		return orderLinesCache;
+	}
+
+	private static List<ProductSummary.Line> buildOrderLines() {
 		List<ProductSummary.Line> out = new ArrayList<>();
 		List<OrderTracker.Check> all = new ArrayList<>(OrderTracker.checkAll(BazaarPrices::get));
 		if (all.isEmpty()) return out;

@@ -84,6 +84,7 @@ public final class CraftEngine {
 	private final double tax;
 	private final long version;
 	private final Map<String, List<Craft>> lists = new ConcurrentHashMap<>();
+	private final Map<String, Map<String, Craft>> byKey = new ConcurrentHashMap<>();
 	private final Map<String, Sizing> walks = new ConcurrentHashMap<>();
 	private final Map<String, Risk> risks = new ConcurrentHashMap<>();
 
@@ -146,8 +147,11 @@ public final class CraftEngine {
 	}
 
 	public Craft craft(String key, boolean byOrder, boolean chains) {
-		for (Craft c : crafts(byOrder, chains)) if (c.key().equals(key)) return c;
-		return null;
+		return byKey.computeIfAbsent(byOrder + "|" + chains, k -> {
+			Map<String, Craft> m = new java.util.HashMap<>();
+			for (Craft c : crafts(byOrder, chains)) m.putIfAbsent(c.key(), c);
+			return m;
+		}).get(key);
 	}
 
 	/**

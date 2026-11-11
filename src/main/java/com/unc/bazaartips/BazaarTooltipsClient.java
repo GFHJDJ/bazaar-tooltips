@@ -41,6 +41,10 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		};
 		BazaarPrices.start();
 		ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> addPriceLines(stack, lines));
+		// Hypixel's "[Bazaar] Your Buy Order for 64x Diamond was filled!" messages keep the orders list right.
+		net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+			if (!overlay) OrderTracker.onChat(message.getString());
+		});
 
 		// B opens the bazaar screen on the tab you used last. Rebind it in Options > Controls > Key Binds > Bazaar Tooltips
 		// (or the Key button on the screen).
@@ -294,8 +298,17 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 	 */
 	static CompoundTag skyblockData(ItemStack stack) {
 		CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-		return data == null ? null : data.copyTag();
+		if (data == null) return null;
+		// A tooltip is rebuilt every frame while you hover: copy the item's data once, not 60+ times a second.
+		if (data != lastData) {
+			lastTag = data.copyTag();
+			lastData = data;
+		}
+		return lastTag;
 	}
+
+	private static CustomData lastData;
+	private static CompoundTag lastTag;
 
 	/** Bazaar product ID for an item, or null for non-Skyblock items. */
 	static String bazaarId(ItemStack stack) {
