@@ -33,6 +33,7 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		SiteData.load();
 		CoflData.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-history.json"));
 		OrderTracker.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-orders.json"));
+		Earnings.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-earnings.jsonl"));
 		Overlays.register();
 		// After each price update, build the list the flips screen will show (on the download thread, so opening it is instant).
 		BazaarPrices.afterRefresh = () -> {
@@ -43,7 +44,10 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> addPriceLines(stack, lines));
 		// Hypixel's "[Bazaar] Your Buy Order for 64x Diamond was filled!" messages keep the orders list right.
 		net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
-			if (!overlay) OrderTracker.onChat(message.getString());
+			if (overlay) return;
+			String text = message.getString();
+			OrderTracker.onChat(text);
+			Earnings.onChat(text, System.currentTimeMillis());       // the Earnings tab: what you bought and sold
 		});
 
 		// B opens the bazaar screen on the tab you used last. Rebind it in Options > Controls > Key Binds > Bazaar Tooltips

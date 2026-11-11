@@ -41,6 +41,7 @@ abstract class BaseScreen extends Screen {
 			{"profit", "Profit/hr", "Profit / hr: coins per hour from each minion's drops, with fuel, upgrades and hoppers."},
 			{"essence", "Essence", "Essence: buy the cheapest AH listing, salvage it (or sacrifice it), sell the essence."},
 			{"cur", "Currency", "Currencies: what to buy with copper, medals, pelts, North Stars and more, ranked by coins per one."},
+			{"earned", "Earnings", "Earnings: the coins you actually made. Every bazaar buy and sell Hypixel reports in chat is written down, with profit per item."},
 			{"orders", "Orders", "Your bazaar orders (read when you open Manage Orders) and whether each is still on top. Chat alerts when one is outbid."}};
 
 	/** Every tab: key, label, explanation (for the settings). */
@@ -72,6 +73,7 @@ abstract class BaseScreen extends Screen {
 			case "profit" -> new ProfitScreen();
 			case "essence" -> new EssenceScreen();
 			case "orders" -> new OrdersScreen();
+			case "earned" -> new EarningsScreen();
 			default -> new FlipsScreen();
 		};
 	}

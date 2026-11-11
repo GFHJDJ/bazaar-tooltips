@@ -34,7 +34,7 @@ Craft it (1 craft makes 9):
 
 Press **B** in game. To change the key, click the gear (⚙) next to Rounded, then the key button (or Options > Controls > Key Binds > Bazaar Tooltips). It opens on the tab you
 used last (or one you pick in the gear). Tabs along the top (they wrap onto two rows; hide the ones you don't use in the gear): **Crafts**, **Flipper**, **Advisor**, **NPC**, **Forge**, **Prices**, **Books**,
-**Minions**, **Profit/hr**, **Essence**, **Currency**, **Orders** (ports of your website's tabs:
+**Minions**, **Profit/hr**, **Essence**, **Currency**, **Earnings**, **Orders** (most are ports of your website's tabs:
 same data, same math, checked against the site's own script number for number). Your coins, free slots,
 tax and Rounded setting are shared by every tab.
 
@@ -178,6 +178,25 @@ cheapest auction** line that runs /viewauction for you.
 What to buy with copper, medals, pelts, North Stars, pests, Rusty Coins, Bingo Points, kernels,
 Carnival Tokens or Gems, ranked by coins per one. The **Currency** button switches between them.
 
+## Earnings tab (what you actually made)
+
+Every other tab says what *should* make money. This one says what *did*. Whenever Hypixel tells you in chat that you
+bought or sold on the bazaar (an insta-buy, an insta-sell, or claiming a buy order or sell offer), the mod writes the
+trade down. Nothing to set up: just trade.
+
+- **Profit**: for items you both bought and sold, what you sold them for minus what those same items cost you (the
+  average of what you paid). With coins per hour, counted from the first trade shown.
+- **Coins in - coins out**: everything earned minus everything spent. Below zero while you still hold stock.
+- **Still holding**: bought and not sold yet, at what you paid (items you used in a craft stay here).
+- **Other sales**: coins from selling things the mod never saw you buy (farmed, crafted, bought earlier). Real coins,
+  but there's no buy price to work a profit out from.
+- **Show**: this session, today, the last 7 days, or all time. Below the totals, one row per item (bought, spent,
+  sold, earned, profit, holding); click a column name to sort, click an item for its order book.
+- **Forget trades** (click twice) deletes the history. Trades are kept in `config/bazaartips-earnings.jsonl`.
+
+It only knows about bazaar trades made while the mod is running, so a craft flip shows as coins out on the
+ingredients and "other sales" on the result; the **Coins in - coins out** line covers those.
+
 ## Orders tab and outbid alerts
 
 Open **/bz -> Manage Orders** once: the mod reads your buy orders and sell offers off that screen (only yours,
@@ -241,15 +260,16 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.14.1.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.15.0.jar`.
 
-The build also runs the tests in `src/test` (prices, risk warnings, flip math, order tracking, alerts). If one
+The build also runs the tests in `src/test` (prices, risk warnings, flips, crafts, NPC and forge math, the advisor,
+best amounts, order tracking, alerts, earnings). If one
 fails, the build fails and no jar is made, here and on GitHub.
 
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.14.1.jar`
+- `bazaar-tooltips-0.15.0.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
@@ -271,6 +291,7 @@ Open the folder in IntelliJ IDEA, let it import, then run the Gradle task `runCl
 - `MinionEngine.java` - the Minions and Profit / hr math. `EssenceEngine.java` - the Essence math.
 - `AhPrices.java` - AH lowest BINs. `MoneyData.java` - builds the three tabs' lists. `MoneyReport.java` - their details lines.
 - `OrderTracker.java` + `OrdersScreen.java` - your bazaar orders and outbid alerts.
+- `Earnings.java` + `EarningsScreen.java` - the Earnings tab: your real trades and profit.
 - `Overlays.java` + `ProductSummary.java` - the panel in the bazaar and the orders box on your screen.
 - `SettingsScreen.java` + `TabsPickScreen.java` - the gear's settings. `FlipAlerts.java` - flip chat alerts.
 - `Advisor.java` + `AdvisorScreen.java`, `AdvisorDetailScreen.java`, `AdvisorExcludeScreen.java` - the Coin advisor.
