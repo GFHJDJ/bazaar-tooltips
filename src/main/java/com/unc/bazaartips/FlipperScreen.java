@@ -93,7 +93,7 @@ public class FlipperScreen extends TableScreen<Flipper.Listed> {
 		String s = "Buy order " + Format.price(f.buyAt()) + " -> sell offer " + Format.price(f.sellAt());
 		if (sized()) {
 			s += l.qty().n() > 0 ? " · best: flip " + Format.count(l.qty().n()) + " -> " + Format.signedCoins(l.qty().n() * f.each())
-					: l.qty().why().equals("slots") ? " · doesn't fit in your slots" : " · can't afford one";
+					: l.qty().why().equals("slots") ? " · doesn't fit in your " + Settings.freeSlots() + " free inventory slots" : " · can't afford one";
 		}
 		return s;
 	}

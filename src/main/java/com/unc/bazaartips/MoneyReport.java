@@ -46,18 +46,18 @@ public final class MoneyReport {
 		if (n > 0) {
 			int st = SiteData.stackOf(f.id(), false);
 			rows.add(Row.line(1, "Flip", "", Format.count(n) + "x", Colors.WHITE, "How many to flip: " + (q.why().equals("coins") ? "as many as your coins buy"
-					: q.why().equals("slots") ? "as many as fit in your free slots" : "about one hour of trading on the slower side") + "."));
+					: q.why().equals("slots") ? "as many as fit in your free inventory slots" : "about one hour of trading on the slower side") + "."));
 			rows.add(Row.line(1, "Buy order cost", Format.count(n) + " x " + Format.price(f.buyAt()), Format.coins(n * f.buyAt()), Colors.YELLOW,
 					"What the buy orders cost in total."));
 			rows.add(Row.line(1, "Sell offers get you", "after " + taxLabel + " tax", Format.coins(n * f.sellAt() * (1 - tax)), Colors.GREEN,
 					"What selling them all by sell offer pays, after tax."));
 			rows.add(Row.line(1, "Profit", "", Format.signedCoins(n * f.each()), Colors.profit(n * f.each()), "Sell offers minus buy orders."));
 			String lim = q.why().equals("coins") ? "Limited by your coins."
-					: q.why().equals("slots") ? "Limited by your free slots (" + ((n + st - 1) / st) + " of " + slots + ")."
+					: q.why().equals("slots") ? "Limited by your free inventory slots (" + ((n + st - 1) / st) + " of " + slots + ")."
 					: "About one hour of trading on the slower side" + (coins > 0 ? "" : "; enter your coins and free slots at the top to size it") + ".";
 			rows.add(note(lim, Colors.DARK_GRAY, "What stopped the amount from being bigger."));
 		} else {
-			rows.add(note(q.why().equals("slots") ? "Your free slots can't hold one." : "Your coins don't cover one at " + Format.price(f.buyAt()) + ".",
+			rows.add(note(q.why().equals("slots") ? "Your " + slots + " free inventory slots can't hold one." : "Your coins don't cover one at " + Format.price(f.buyAt()) + ".",
 					Colors.RED, "The amount came out as zero with your coins and slots."));
 		}
 		double hrs = n > 0 && f.flow() > 0 ? n / f.flow() : -1;
@@ -149,7 +149,11 @@ public final class MoneyReport {
 			return "best: " + r.qtyLabel.toLowerCase(Locale.ROOT) + " " + Format.count(b.n()) + (used > 0 ? " · " + used + (used == 1 ? " slot" : " slots") : "")
 					+ " -> " + Format.signedCoins(b.profit());
 		}
-		return b.why().equals("slots") ? "doesn't fit in your slots" : "can't afford one";
+		if (b.why().equals("slots")) {
+			long need = r.slotsUsed(1);
+			return (need > 0 ? "one needs " + need + " inventory slots" : "doesn't fit") + "; you have " + Settings.freeSlots() + " free (Slots box)";
+		}
+		return "can't afford one";
 	}
 
 	/** Why the best amount stopped where it did. */
@@ -157,7 +161,7 @@ public final class MoneyReport {
 		Amounts.Best b = r.best;
 		if (b == null) return "";
 		return switch (b.why()) {
-			case "slots" -> "fills your slots";
+			case "slots" -> "fills your " + Settings.freeSlots() + " free inventory slots";
 			case "coins" -> "all your coins";
 			case "price" -> "more would cost more than it earns";
 			case "cap" -> r.hardWhy().isEmpty() ? "" : "limit: " + r.hardWhy();

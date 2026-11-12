@@ -396,7 +396,8 @@ abstract class TableScreen<T> extends BaseScreen {
 			x += font.width("Coins") + 4 + 64 + 6;
 			graphics.text(font, "Slots", x, y1, Colors.GRAY);
 			explain.add(x, y1 - 4, x + font.width("Slots") + 4 + 34, y1 + 12,
-					"Free inventory slots: Best amounts won't buy more than fits (most items stack to 64; books and unique items take a slot each).");
+					"Free inventory slots (not forge slots: those come from your HotM tier): Best amounts won't buy more than fits in your "
+							+ "inventory (most items stack to 64; books and unique items take a slot each). Empty = no slot limit.");
 		}
 		for (int i = 0; i < controls.size(); i++) {
 			Button b = controlButtons.get(i);

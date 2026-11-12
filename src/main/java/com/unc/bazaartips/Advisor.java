@@ -188,7 +188,7 @@ public final class Advisor {
 			r.cost = cost;
 			r.perHour = hrs > 0 && Double.isFinite(hrs) ? bq.profit() / hrs : bq.profit() * 12;    // instant things: count as ~5 minutes
 			r.limit = switch (bq.why()) {
-				case "slots" -> "fills your slots";
+				case "slots" -> "fills your " + Settings.freeSlots() + " free inventory slots";
 				case "coins" -> "all your coins";
 				case "price" -> "more would cost more than it earns";
 				default -> r.hardWhy() == null ? "" : r.hardWhy();

@@ -163,7 +163,7 @@ public final class CraftReport {
 				if (b != null) {
 					String why = switch (b.why()) {
 						case "coins" -> "all your coins";
-						case "slots" -> "fills your slots";
+						case "slots" -> "fills your " + Settings.freeSlots() + " free inventory slots";
 						case "price" -> "more would cost more than it earns";
 						default -> "limit: " + b.sizing().hardWhy();
 					};
