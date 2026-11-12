@@ -265,7 +265,7 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 
 	@Override
 	protected int nameColor(MoneyEngine.Row r) {
-		return Colors.WHITE;
+		return r.slowWeek >= 0 ? Colors.ORANGE : Colors.WHITE;
 	}
 
 	@Override
@@ -278,7 +278,8 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 			case "shop" -> r.meta.isEmpty() ? "" : r.meta.get(0);
 			default -> r.meta.isEmpty() ? "" : String.join(" · ", r.meta);
 		};
-		return first + (best != null ? " · " + best : "");
+		String slow = r.slowWeek >= 0 ? "Slow seller: only " + Format.count(r.slowWeek) + " trade on the Bazaar a week · " : "";
+		return slow + first + (best != null ? " · " + best : "");
 	}
 
 	@Override

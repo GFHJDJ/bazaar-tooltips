@@ -27,6 +27,8 @@ final class Overlays {
 		});
 		HudElementRegistry.attachElementAfter(VanillaHudElements.BOSS_BAR,
 				net.minecraft.resources.Identifier.fromNamespaceAndPath("bazaartips", "orders"), (g, delta) -> orderBox(g));
+		HudElementRegistry.attachElementAfter(VanillaHudElements.BOSS_BAR,
+				net.minecraft.resources.Identifier.fromNamespaceAndPath("bazaartips", "earnings"), (g, delta) -> earningsBox(g));
 	}
 
 	// ---- the panel beside a bazaar item's page ----
@@ -185,6 +187,52 @@ final class Overlays {
 		int h = lines.size() * (font.lineHeight + 1) + 8;
 		int x = Settings.orderHudCorner.equals("top-right") ? sw - w - 4 : 4;
 		int y = Settings.orderHudCorner.equals("middle-left") ? Math.max(4, (sh - h) / 2) : 4;
+		panel(g, font, x, y, w, lines, sh - 4);
+	}
+
+	// ---- the session profit box ----
+
+	private static String earnStamp = "";
+	private static List<ProductSummary.Line> earnLines = List.of();
+
+	/** "Session profit" and coins / hr from the Earnings tab, once you've traded on the bazaar this session. Rebuilt at most once a minute. */
+	static List<ProductSummary.Line> earningsLines() {
+		long now = System.currentTimeMillis();
+		String st = Earnings.version() + "|" + now / 60_000 + "|" + Format.rounded();
+		if (!st.equals(earnStamp)) {
+			Earnings.Summary s = Earnings.summary("session", now);
+			List<ProductSummary.Line> out = new ArrayList<>();
+			if (s.trades() > 0) {
+				double hr = s.perHour(now);
+				out.add(new ProductSummary.Line("Session profit", Colors.GOLD, Format.signedShortCoins(s.profit()), Colors.profit(s.profit()), false));
+				if (!Double.isNaN(hr)) out.add(new ProductSummary.Line("Per hour", Colors.GRAY, Format.signedShortCoins(hr), Colors.profit(hr), true));
+				out.add(new ProductSummary.Line("Coins in - out", Colors.GRAY, Format.signedShortCoins(s.net()), Colors.profit(s.net()), true));
+			}
+			earnLines = out;
+			earnStamp = st;
+		}
+		return earnLines;
+	}
+
+	static void earningsBox(GuiGraphicsExtractor g) {
+		if (!Settings.earnHud) return;
+		Minecraft mc = Minecraft.getInstance();
+		if (mc == null || mc.player == null) return;
+		List<ProductSummary.Line> lines = earningsLines();
+		if (lines.isEmpty()) return;
+		Font font = mc.font;
+		int w = 0;
+		for (ProductSummary.Line l : lines) w = Math.max(w, font.width(l.text()) + (l.indent() ? 4 : 0) + (l.value().isEmpty() ? 0 : font.width(l.value()) + 8));
+		w = Math.min(w + 8, 220);
+		int sw = mc.getWindow().getGuiScaledWidth(), sh = mc.getWindow().getGuiScaledHeight();
+		int h = lines.size() * (font.lineHeight + 1) + 8;
+		int x = Settings.earnHudCorner.equals("top-right") ? sw - w - 4 : 4;
+		int y = Settings.earnHudCorner.equals("middle-left") ? Math.max(4, (sh - h) / 2) : 4;
+		// sharing a corner with the orders box: sit just under it
+		if (Settings.orderHud && Settings.orderHudCorner.equals(Settings.earnHudCorner)) {
+			List<ProductSummary.Line> orders = orderLines();
+			if (!orders.isEmpty()) y += orders.size() * (font.lineHeight + 1) + 8 + 4;
+		}
 		panel(g, font, x, y, w, lines, sh - 4);
 	}
 }

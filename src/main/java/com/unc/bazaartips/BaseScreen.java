@@ -48,6 +48,7 @@ abstract class BaseScreen extends Screen {
 			{"kat", "Kat", "Kat: buy a pet on the AH, have Kat upgrade its rarity, sell it on the AH."},
 			{"bits", "Bits", "Bits: what to buy with bits at Elizabeth, ranked by coins per bit."},
 			{"ah", "AH", "Auction house: items listed below their Bazaar price, crafts using AH-only ingredients, and any item's lowest BIN."},
+			{"inv", "Inventory", "Inventory: what everything you're carrying is worth, and whether to sell each item on the Bazaar or to an NPC."},
 			{"earned", "Earnings", "Earnings: the coins you actually made. Every bazaar buy and sell Hypixel reports in chat is written down, with profit per item."},
 			{"orders", "Orders", "Your bazaar orders (read when you open Manage Orders) and whether each is still on top. Chat alerts when one is outbid."}};
 
@@ -84,6 +85,7 @@ abstract class BaseScreen extends Screen {
 			case "kat" -> new MoneyScreen("kat");
 			case "bits" -> new MoneyScreen("bits");
 			case "ah" -> new AhScreen();
+			case "inv" -> new InventoryScreen();
 			default -> new FlipsScreen();
 		};
 	}

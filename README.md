@@ -34,7 +34,7 @@ Craft it (1 craft makes 9):
 
 Press **B** in game. To change the key, click the gear (⚙) next to Rounded, then the key button (or Options > Controls > Key Binds > Bazaar Tooltips). It opens on the tab you
 used last (or one you pick in the gear). Tabs along the top (they wrap onto two rows; hide the ones you don't use in the gear): **Crafts**, **Flipper**, **Advisor**, **NPC**, **Forge**, **Prices**, **Books**,
-**Minions**, **Profit/hr**, **Essence**, **Currency**, **Kat**, **Bits**, **AH**, **Earnings**, **Orders** (most are ports of your website's tabs:
+**Minions**, **Profit/hr**, **Essence**, **Currency**, **Kat**, **Bits**, **AH**, **Inventory**, **Earnings**, **Orders** (most are ports of your website's tabs:
 same data, same math, checked against the site's own script number for number). Your coins, free slots,
 tax and Rounded setting are shared by every tab.
 
@@ -181,6 +181,12 @@ cheapest auction** line that runs /viewauction for you.
 What to buy with copper, medals, pelts, North Stars, pests, Rusty Coins, Bingo Points, kernels,
 Carnival Tokens or Gems, ranked by coins per one. The **Currency** button switches between them.
 
+## Slow sellers
+
+On the Forge, NPC shop, Books, Currency and Bits lists, a result that trades fewer than 100 times a week on the Bazaar
+has an orange name, and its hover and details say "Slow seller: only N trade on the Bazaar a week". Selling more than
+a couple can take a long time, and insta-selling several walks down to worse buy orders.
+
 ## Kat tab
 
 Buy a pet on the AH, have Kat upgrade its rarity, sell it on the AH. Each upgrade shows what it costs (the pet's lowest
@@ -207,6 +213,14 @@ Three views (the **View** button):
 
 **Sell**, **Risky**, **Low vol** and **Tax** work like on the other tabs. AH prices are refreshed every 5 minutes.
 
+## Inventory tab
+
+What everything in your inventory and hotbar is worth, and the best place to sell each item right now: insta-sell on
+the Bazaar (walking the buy orders, after tax), any NPC (no tax), or the AH lowest BIN for things not on the Bazaar.
+A **Sell offer** column shows what listing it would pay instead. At the top: the total worth now, what sell offers would
+add, how many items an NPC pays more for (green; sell those to any NPC), and what's AH-only. It updates as your
+inventory changes. Sacks, storage and equipped gear aren't counted.
+
 ## Earnings tab (what you actually made)
 
 Every other tab says what *should* make money. This one says what *did*. Whenever Hypixel tells you in chat that you
@@ -221,6 +235,9 @@ trade down. Nothing to set up: just trade.
   but there's no buy price to work a profit out from.
 - **Show**: this session, today, the last 7 days, or all time. Below the totals, one row per item (bought, spent,
   sold, earned, profit, holding); click a column name to sort, click an item for its order book.
+- **Session profit box**: a small box on your screen with this session's profit, coins per hour, and coins in minus
+  coins out. It appears once you've traded on the bazaar; turn it off or move it in the gear (it goes under the orders
+  box if they share a corner).
 - **Forget trades** (click twice) deletes the history. Trades are kept in `config/bazaartips-earnings.jsonl`.
 
 It only knows about bazaar trades made while the mod is running, so a craft flip shows as coins out on the
@@ -289,7 +306,7 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.16.2.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.17.0.jar`.
 
 The build also runs the tests in `src/test` (prices, risk warnings, flips, crafts, NPC and forge math, the advisor,
 best amounts, order tracking, alerts, earnings). If one
@@ -298,7 +315,7 @@ fails, the build fails and no jar is made, here and on GitHub.
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.16.2.jar`
+- `bazaar-tooltips-0.17.0.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
@@ -322,7 +339,7 @@ Open the folder in IntelliJ IDEA, let it import, then run the Gradle task `runCl
 - `OrderTracker.java` + `OrdersScreen.java` - your bazaar orders and outbid alerts.
 - `Earnings.java` + `EarningsScreen.java` - the Earnings tab: your real trades and profit.
 - `MoneyEngine.kat()` - the Kat tab (on `MoneyScreen`); the Bits tab is `MoneyEngine.currencies("bits")`.
-- `AhEngine.java` + `AhScreen.java` - the AH tab. `Cycle.java` - left / right click stepping through a button's options.
+- `AhEngine.java` + `AhScreen.java` - the AH tab. `InventoryValue.java` + `InventoryScreen.java` - the Inventory tab. `Cycle.java` - left / right click stepping through a button's options.
 - `Overlays.java` + `ProductSummary.java` - the panel in the bazaar and the orders box on your screen.
 - `SettingsScreen.java` + `TabsPickScreen.java` - the gear's settings. `FlipAlerts.java` - flip chat alerts.
 - `Advisor.java` + `AdvisorScreen.java`, `AdvisorDetailScreen.java`, `AdvisorExcludeScreen.java` - the Coin advisor.

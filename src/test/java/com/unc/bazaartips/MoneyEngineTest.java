@@ -91,6 +91,15 @@ class MoneyEngineTest {
 	}
 
 	@Test
+	void slowSellersAreFlagged() {
+		assertEquals(-1, row(engine(false, false, 0, 0, 0).forge(), "REFINED_DIAMOND").slowWeek);
+		prices.put("REFINED_DIAMOND", new BazaarPrices.Price(700_000, 650_000, 40, 27,
+				List.of(new BazaarPrices.Level(700_000, 5, 2)), List.of(new BazaarPrices.Level(650_000, 5, 2))));
+		assertEquals(27, row(engine(false, false, 0, 0, 0).forge(), "REFINED_DIAMOND").slowWeek);   // the slower of bought and sold
+		assertEquals(-1, engine(false, false, 0, 0, 0).npcShops().get(0).slowWeek);                  // wheat sells fine
+	}
+
+	@Test
 	void yourHotmTierHidesWhatYouCantForgeAndSetsYourSlots() {
 		assertNotNull(row(engine(false, false, 0, 0, 0).forge(), "TOP_TIER_THING"));
 		assertNull(row(engine(false, false, 2, 0, 0).forge(), "TOP_TIER_THING"));

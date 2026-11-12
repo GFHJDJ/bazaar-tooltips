@@ -225,6 +225,10 @@ public final class MoneyReport {
 				: tab.equals("cur") ? "What one purchase costs in the currency."
 				: tab.equals("kat") ? "How long Kat takes to upgrade the pet."
 				: "Buy it from an NPC shop, sell it on the " + (r.flag.endsWith("AH") ? "Auction House." : "Bazaar.")));
+		if (r.slowWeek >= 0) {
+			rows.add(note("! Slow seller: only " + Format.count(r.slowWeek) + " trade on the Bazaar a week", Colors.ORANGE,
+					"Few people buy this, so selling more than a couple can take a long time, and insta-selling a few walks down to worse buy orders."));
+		}
 		if (!r.req.isEmpty()) {
 			rows.add(note("Requires " + r.req, Colors.WHITE, "What you need to forge this (Heart of the Mountain tier and/or a collection)."));
 		}

@@ -41,6 +41,8 @@ public final class MoneyEngine {
 		public double profit, pct, perHour, costEach, value, vol, week;
 		/** Currencies: coins per one of the currency, and how many it costs. */
 		public double per;
+		/** How many of the result trade on the Bazaar a week, when that's few enough to be slow to sell (-1 = not slow). */
+		public long slowWeek = -1;
 		public long amt;
 		public long time;
 		public List<String> meta = new ArrayList<>();
@@ -255,7 +257,10 @@ public final class MoneyEngine {
 					+ ". Quick Forge and other time perks aren't counted.";
 			String mid = SiteData.marketId(r.id(), x.prices());
 			BazaarPrices.Price sellIt = x.prices().apply(mid);
-			if (s.src().equals("Bazaar")) forgeSizing(row, r, cost.total(), sellIt);
+			if (s.src().equals("Bazaar")) {
+				forgeSizing(row, r, cost.total(), sellIt);
+				markSlow(row, sellIt);
+			}
 			rows.add(row);
 		}
 		addCoinsInfo(rows);
@@ -454,6 +459,7 @@ public final class MoneyEngine {
 						items > 640 ? "Heads up: many NPCs cap how many you can buy per day (the wiki lists 640 a day for some shops), "
 								+ "so this may take more than one day." : "");
 			};
+			if (bz) markSlow(row, sellIt);
 			rows.add(row);
 		}
 		addCoinsInfo(rows);
@@ -553,6 +559,7 @@ public final class MoneyEngine {
 				row.value = value;
 				row.vol = Math.min(a.buyMovingWeek(), b.sellMovingWeek());
 				row.market = b;
+				markSlow(row, b);
 				String rn = SiteData.roman(n), rn1 = SiteData.roman(n + 1);
 				row.title = nm + " " + rn + " + " + rn + " -> " + rn1;
 				row.flag = "Anvil";
@@ -614,6 +621,16 @@ public final class MoneyEngine {
 	}
 
 	public int unsellable, viaAH;
+
+	/** Results trading fewer than this a week on the Bazaar get flagged as slow sellers. */
+	public static final long SLOW_WEEK = 100;
+
+	/** Flags a row whose result sells on the Bazaar but only a few trade there each week (the slower of bought and sold). */
+	static void markSlow(Row r, BazaarPrices.Price sellIt) {
+		if (sellIt == null) return;
+		long w = Math.min(sellIt.buyMovingWeek(), sellIt.sellMovingWeek());
+		if (w < SLOW_WEEK) r.slowWeek = w;
+	}
 
 	// ---------------------------------------------------------------- Kat pet upgrades (renderKat)
 
@@ -713,6 +730,7 @@ public final class MoneyEngine {
 					+ (s.src().equals("AH") ? "on the AH (lowest BIN " + Format.coins(s.u()) + ", before AH fees; it may take a while to sell)"
 							: "on the Bazaar for " + Format.price(s.u()) + " each after tax")
 					+ ". That works out to " + Format.price(per) + " coins per " + one + ".";
+			if (s.src().equals("Bazaar")) markSlow(row, x.prices().apply(SiteData.marketId(id, x.prices())));
 			rows.add(row);
 		}
 		return rows;

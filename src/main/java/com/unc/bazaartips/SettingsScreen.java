@@ -89,6 +89,17 @@ public class SettingsScreen extends BaseScreen {
 		items.add(Item.cycle("Outbid chat alerts", () -> onOff(Settings.orderAlerts),
 				"A chat message when one of your bazaar orders is outbid or undercut (also on the Orders tab).",
 				d -> Settings.orderAlerts = !Settings.orderAlerts));
+		items.add(Item.heading("Earnings", "The coins you really made, from Hypixel's bazaar chat messages (the Earnings tab)."));
+		items.add(Item.cycle("Session profit box", () -> onOff(Settings.earnHud),
+				"A small box on your screen with this session's bazaar profit and coins per hour. It shows once you've bought or sold on the bazaar.",
+				d -> Settings.earnHud = !Settings.earnHud));
+		items.add(Item.cycle("Profit box position", () -> cornerName(Settings.earnHudCorner),
+				"Where the session profit box sits. If it shares a corner with the orders box, it goes underneath. Right click goes back.",
+				d -> {
+					List<String> keys = new ArrayList<>();
+					for (String[] c : Overlays.CORNERS) keys.add(c[0]);
+					Settings.earnHudCorner = Cycle.step(keys, Settings.earnHudCorner, d);
+				}));
 		items.add(Item.heading("Flip alerts", "Chat messages when a flip reaches your alert score."));
 		items.add(Item.cycle("Flip chat alerts", () -> onOff(Settings.flipAlerts),
 				"A chat message (with a /bz link) when a flip reaches your alert score. The first check only says how many there are; after "
@@ -118,7 +129,11 @@ public class SettingsScreen extends BaseScreen {
 	}
 
 	private static String cornerName() {
-		for (String[] c : Overlays.CORNERS) if (c[0].equals(Settings.orderHudCorner)) return c[1];
+		return cornerName(Settings.orderHudCorner);
+	}
+
+	private static String cornerName(String key) {
+		for (String[] c : Overlays.CORNERS) if (c[0].equals(key)) return c[1];
 		return "Top left";
 	}
 
