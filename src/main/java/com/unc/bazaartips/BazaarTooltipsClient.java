@@ -35,6 +35,7 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		OrderTracker.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-orders.json"));
 		Earnings.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-earnings.jsonl"));
 		Overlays.register();
+		InventoryPanel.register();
 		// After each price update, build the list the flips screen will show (on the download thread, so opening it is instant).
 		BazaarPrices.afterRefresh = () -> {
 			CraftEngine.current().crafts(Settings.buy == Settings.Buy.ORDER, Settings.chains != Settings.Chains.EXCLUDE);
