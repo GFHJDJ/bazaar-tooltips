@@ -111,6 +111,9 @@ class MoneyEngineTest {
 		MoneyEngine.Row rich = row(engine(false, false, 5, 1_000_000_000, 0).forge(), "REFINED_DIAMOND");
 		assertEquals(5, rich.best.n());                                // plenty of coins: your 5 forge slots stop you
 		assertEquals("cap", rich.best.why());
+		MoneyEngine.Row oneSlot = row(engine(false, false, 5, 1_000_000_000, 1).forge(), "REFINED_DIAMOND");
+		assertEquals(5, oneSlot.best.n());                             // free inventory slots don't limit the forge
+		assertEquals(0, oneSlot.slotsUsed(5));
 	}
 
 	// ---- buying and selling bigger amounts ----

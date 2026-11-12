@@ -272,12 +272,9 @@ public final class MoneyEngine {
 		row.hrsAt = n -> rec.t() / 3600.0 + sellHrs(sellIt, (double) n * out);
 		row.profitAt = n -> bzSellGet(sellIt, n * out).total() - n * costEach;
 		row.maxAfford = c -> (long) Math.floor(c / costEach);
-		row.maxFit = s -> {
-			long n = 0;
-			while (n < 10000 && forgeSlotsUsed(rec, n + 1) <= s) n++;
-			return n;
-		};
-		row.slotsUsed = n -> forgeSlotsUsed(rec, n);
+		// No inventory limit here: forge materials usually live in sacks, so only your coins and forge slots size it.
+		row.maxFit = null;
+		row.slotsUsed = null;
 		row.breaks = () -> x.sellOffer() ? List.of() : Amounts.cumBreaks(sellIt.buyOrders(), out);
 		capMin(row, new Object[] {(double) fs, "your " + fs + " forge slot" + (fs == 1 ? "" : "s")}, capSell(sellIt, out));
 		row.defQty = 1;
@@ -298,11 +295,6 @@ public final class MoneyEngine {
 		};
 	}
 
-	private static long forgeSlotsUsed(SiteData.Forge rec, long n) {
-		long t = 0;
-		for (SiteData.Mat m : rec.in()) t += (long) Math.ceil((double) m.qty() * n / SiteData.stackOf(m.id(), false));
-		return t;
-	}
 
 	private static long ceilDiv(long a, long b) {
 		return (a + b - 1) / b;
