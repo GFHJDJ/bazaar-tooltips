@@ -56,13 +56,26 @@ public final class MoneyData {
 			o("name", "Name", "Name", "Alphabetical."));
 
 	public static List<CraftEngine.SortOption> curSorts() {
-		String one = MoneyEngine.CURRENCIES.getOrDefault(Settings.curType, MoneyEngine.CURRENCIES.get("copper"))[1];
+		return curSorts(Settings.curType);
+	}
+
+	/** The sorts for one currency's shop (the Bits tab uses "bits"). */
+	public static List<CraftEngine.SortOption> curSorts(String type) {
+		String[] n = MoneyEngine.CURRENCIES.getOrDefault(type, MoneyEngine.CURRENCIES.get("copper"));
+		String one = n[1];
 		return List.of(
 				o("per", "Coins per " + one, "Coins / " + one, "How many coins each " + one + " turns into: what it sells for (minus any extra cost), divided by its price."),
 				o("value", "Total value", "Total value", "What one purchase sells for, minus any extra coins or items it costs."),
-				o("amt", "Cheapest", "Cheapest", "Fewest " + MoneyEngine.CURRENCIES.getOrDefault(Settings.curType, MoneyEngine.CURRENCIES.get("copper"))[2] + " first."),
+				o("amt", "Cheapest", "Cheapest", "Fewest " + n[2] + " first."),
 				o("name", "Name", "Name", "Alphabetical."));
 	}
+
+	public static final List<CraftEngine.SortOption> KAT_SORTS = List.of(
+			o("profit", "Profit", "Profit", "What the upgraded pet sells for minus the pet, Kat's coins and the materials."),
+			o("perHour", "Profit / day of Kat time", "Profit / day", "Profit divided by how long Kat takes."),
+			o("pct", "Return %", "Return %", "Profit as a % of everything it costs."),
+			o("time", "Fastest", "Fastest", "Shortest Kat time first."),
+			o("name", "Name", "Name", "Alphabetical."));
 
 	public static CraftEngine.SortOption find(List<CraftEngine.SortOption> opts, String key) {
 		for (CraftEngine.SortOption s : opts) if (s.key().equals(key)) return s;
@@ -158,6 +171,37 @@ public final class MoneyData {
 			curStamp = st;
 		}
 		return cur;
+	}
+
+	private static String katStamp = "", bitsStamp = "";
+	private static List<MoneyEngine.Row> kat = List.of(), bits = List.of();
+	private static int bitsUnsellable = 0, bitsViaAH = 0;
+
+	/** Kat pet upgrades (unsorted). Needs the AH prices. */
+	public static synchronized List<MoneyEngine.Row> kat() {
+		String st = moneyStamp();
+		if (!st.equals(katStamp)) {
+			kat = new MoneyEngine(ctx()).kat();
+			katStamp = st;
+		}
+		return kat;
+	}
+
+	/** What to buy with bits (unsorted). */
+	public static synchronized List<MoneyEngine.Row> bits() {
+		String st = moneyStamp();
+		if (!st.equals(bitsStamp)) {
+			MoneyEngine e = new MoneyEngine(ctx());
+			bits = e.currencies("bits");
+			bitsUnsellable = e.unsellable;
+			bitsViaAH = e.viaAH;
+			bitsStamp = st;
+		}
+		return bits;
+	}
+
+	public static synchronized int[] bitsHidden() {
+		return new int[] {bitsUnsellable, bitsViaAH};
 	}
 
 	/** {items that can't be sold, items hidden because they only sell on the AH} for the last currency list. */

@@ -116,6 +116,9 @@ def main(path):
         "enchMax": money.get("enchMax", {}),
         "enchMap": money.get("enchMap", {}),
         "cur": money.get("cur", []),
+        # Kat and Bits tabs
+        "kat": money.get("kat", []),
+        "bits": money.get("bits", []),
         "minions": minions,
         "minProfit": site_object(html, "MINPROFIT"),
         "minStore": site_object(html, "MINSTORE"),
@@ -125,7 +128,8 @@ def main(path):
     dest2 = os.path.join(os.path.dirname(dest), "money.json")
     with open(dest2, "w", encoding="utf-8") as f:
         json.dump(money_out, f, separators=(",", ":"), ensure_ascii=False)
-    print(f"{len(money['forge'])} forge recipes, {len(money['shops'])} NPC shop offers, {len(money['npcs'])} NPCs -> {os.path.normpath(dest2)}")
+    print(f"{len(money['forge'])} forge recipes, {len(money['shops'])} NPC shop offers, {len(money['npcs'])} NPCs, "
+          f"{len(money.get('kat', []))} Kat upgrades, {len(money.get('bits', []))} bits items -> {os.path.normpath(dest2)}")
 
 
 if __name__ == "__main__":

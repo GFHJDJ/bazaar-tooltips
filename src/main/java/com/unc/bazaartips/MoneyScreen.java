@@ -5,17 +5,24 @@ import java.util.List;
 
 /** The website's NPC flips and Forge tabs. */
 public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
-	/** "forge", "npc" (Bazaar -> NPC) or "shop" (NPC shop -> Bazaar/AH), from the tab and its View setting. */
+	/** "forge", "books", "cur", "kat", "bits", "npc" (Bazaar -> NPC) or "shop" (NPC shop -> Bazaar/AH), from the tab and its View setting. */
 	private String kind() {
-		return tab.equals("forge") || tab.equals("books") || tab.equals("cur") ? tab : Settings.npcView.equals("shop") ? "shop" : "npc";
+		return switch (tab) { case "forge", "books", "cur", "kat", "bits" -> tab; default -> Settings.npcView.equals("shop") ? "shop" : "npc"; };
 	}
 
 	public MoneyScreen(String tab) {
-		super(switch (tab) { case "forge" -> "Forge"; case "books" -> "Books"; case "cur" -> "Currencies"; default -> "NPC flips"; }, tab);
+		super(switch (tab) { case "forge" -> "Forge"; case "books" -> "Books"; case "cur" -> "Currencies"; case "kat" -> "Kat"; case "bits" -> "Bits";
+			default -> "NPC flips"; }, tab);
 	}
 
-	private static String[] curNames() {
-		return MoneyEngine.CURRENCIES.getOrDefault(Settings.curType, MoneyEngine.CURRENCIES.get("copper"));
+	/** The currency's names {plural title, one, many}: bits on the Bits tab, the chosen currency on Currencies. */
+	private String[] names() {
+		return MoneyEngine.CURRENCIES.getOrDefault(kind().equals("bits") ? "bits" : Settings.curType, MoneyEngine.CURRENCIES.get("copper"));
+	}
+
+	/** The Currency tab and the Bits tab are the same list (bits are just one more currency). */
+	private boolean curLike() {
+		return kind().equals("cur") || kind().equals("bits");
 	}
 
 	@Override
@@ -56,16 +63,17 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 		List<Control> c = new ArrayList<>();
 		String kind = kind();
 		if (kind.equals("cur")) {
-			c.add(new Control(() -> "Currency: " + curNames()[0].replace(" (bought with real money)", ""),
-					() -> "Currency: " + curNames()[0] + ". What you're spending. Click to step through copper, medals, pelts, North Stars, pests, "
+			c.add(new Control(() -> "Currency: " + names()[0].replace(" (bought with real money)", ""),
+					() -> "Currency: " + names()[0] + ". What you're spending. Click to step through copper, medals, pelts, North Stars, pests, "
 							+ "Rusty Coins, Bingo Points, kernels, Carnival Tokens and Gems.",
 					d -> {
 						List<String> keys = new ArrayList<>(MoneyEngine.CURRENCIES.keySet());
+						keys.remove("bits");                                 // bits have their own tab
 						Settings.curType = Cycle.step(keys, Settings.curType, d);
 						if (!List.of("per", "value", "amt", "name").contains(Settings.curSort)) Settings.curSort = "per";
 					}));
-		} else if (kind.equals("books")) {
-			// no extra button: books only need Buy, Sell, Sort and Tax
+		} else if (kind.equals("books") || kind.equals("kat") || kind.equals("bits")) {
+			// no extra button: these only need Buy, Sell, Sort and Tax (Kat: Buy and Sort)
 		} else if (kind.equals("forge")) {
 			c.add(new Control(() -> "HotM: " + (Settings.forgeHotm == 0 ? "any" : Integer.toString(Settings.forgeHotm)),
 					() -> "Your Heart of the Mountain tier (" + (Settings.forgeHotm == 0 ? "any" : Settings.forgeHotm) + "): hides recipes that need a "
@@ -82,7 +90,7 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 					}));
 		}
 		c.add(buyControl());
-		if (!kind.equals("npc")) {
+		if (!kind.equals("npc") && !kind.equals("kat")) {             // pets only sell on the AH
 			c.add(sellControl());
 			if (!kind.equals("books")) c.add(bazaarOnlyControl());
 		}
@@ -96,7 +104,7 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 					d -> Settings.npcAvail = Cycle.step(List.of("always", "nomayor", "all"), Settings.npcAvail, d)));
 		}
 		c.add(sortControl());
-		c.add(taxControl());
+		if (!kind.equals("kat")) c.add(taxControl());                 // Kat buys and sells on the AH: no bazaar tax
 		return c;
 	}
 
@@ -106,6 +114,8 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 			case "shop" -> MoneyData.SHOP_SORTS;
 			case "books" -> MoneyData.BOOK_SORTS;
 			case "cur" -> MoneyData.curSorts();
+			case "bits" -> MoneyData.curSorts("bits");
+			case "kat" -> MoneyData.KAT_SORTS;
 			default -> MoneyData.NPC_SORTS;
 		};
 	}
@@ -116,6 +126,8 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 			case "shop" -> Settings.npcShopSort;
 			case "books" -> Settings.bookSort;
 			case "cur" -> Settings.curSort;
+			case "bits" -> Settings.bitsSort;
+			case "kat" -> Settings.katSort;
 			default -> Settings.npcSort;
 		};
 	}
@@ -126,6 +138,8 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 			case "shop" -> Settings.npcShopSort = k;
 			case "books" -> Settings.bookSort = k;
 			case "cur" -> Settings.curSort = k;
+			case "bits" -> Settings.bitsSort = k;
+			case "kat" -> Settings.katSort = k;
 			default -> Settings.npcSort = k;
 		}
 		MoneyData.syncSellFromSort(k);
@@ -133,7 +147,7 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 
 	private Control sortControl() {
 		return sortControl(switch (kind()) { case "forge" -> "Sort forge recipes by"; case "books" -> "Sort book combinations by";
-			case "cur" -> "Sort what to buy by"; default -> "Sort NPC flips by"; }, sorts(), this::sortKey, this::setSort);
+			case "cur", "bits" -> "Sort what to buy by"; case "kat" -> "Sort Kat upgrades by"; default -> "Sort NPC flips by"; }, sorts(), this::sortKey, this::setSort);
 	}
 
 	// ---- the table ----
@@ -169,12 +183,22 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 				cols.add(new Column<>("Vol/wk", "Vol/wk: the slower of level N bought per week and level N+1 sold per week.",
 						r -> Format.amount((long) r.vol), r -> r.vol >= CraftEngine.LOW_VOLUME ? Colors.GRAY : Colors.RED));
 			}
-			case "cur" -> {
-				String one = curNames()[1];
-				cols.add(new Column<>("Costs", "Costs: how many " + curNames()[2] + " it takes.", r -> Format.count(r.amt), r -> Colors.YELLOW));
+			case "kat" -> {
+				cols.add(new Column<>("Cost", "Cost: the pet's lowest BIN on the AH, plus Kat's coins and the materials (bought the way the Buy button says).",
+						r -> Format.shortCoins(r.costEach), r -> Colors.YELLOW));
+				cols.add(new Column<>("Sells for", "Sells for: the upgraded pet's lowest BIN on the AH, before AH fees.",
+						r -> Format.shortCoins(r.value), r -> Colors.YELLOW));
+				cols.add(new Column<>("Profit", "Profit: sells for minus cost.", r -> Format.signedShortCoins(r.profit), r -> Colors.profit(r.profit)));
+				cols.add(new Column<>("Per day", "Profit / day: profit divided by how long Kat takes.",
+						r -> Format.signedShortCoins(r.perHour * 24), r -> Colors.profit(r.perHour)));
+				cols.add(new Column<>("Time", "Time: how long Kat takes (Kat Flowers and Bouquets that skip time aren't counted).", r -> r.flag, r -> Colors.GRAY));
+			}
+			case "cur", "bits" -> {
+				String one = names()[1];
+				cols.add(new Column<>("Costs", "Costs: how many " + names()[2] + " it takes.", r -> Format.count(r.amt), r -> Colors.YELLOW));
 				cols.add(new Column<>("Sells for", "Sells for: what one purchase sells for minus any extra coins/items it costs (Bazaar after tax; AH = lowest BIN before fees).",
 						r -> Format.signedShortCoins(r.value), r -> Colors.profit(r.value)));
-				cols.add(new Column<>("Per " + one, "Coins per " + one + ": the value divided by how many " + curNames()[2] + " it costs. Higher is better.",
+				cols.add(new Column<>("Per " + one, "Coins per " + one + ": the value divided by how many " + names()[2] + " it costs. Higher is better.",
 						r -> Format.shortCoins(r.per), r -> Colors.profit(r.per)));
 			}
 			case "shop" -> {
@@ -198,7 +222,7 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 						r -> Format.amount((long) r.vol), r -> Colors.GRAY));
 			}
 		}
-		if (sized() && !kind().equals("cur")) {
+		if (sized() && !curLike() && !kind().equals("kat")) {
 			cols.add(cols.size() > 4 ? 4 : cols.size(), new Column<>("Best", "Best: profit from the best amount per trip for your coins and free slots, "
 					+ "walking the live order book. Hover a row for the amount.", MoneyScreen::bestCell,
 					r -> r.best != null && r.best.n() > 0 && r.best.profit() > 0 ? Colors.GREEN : Colors.DARK_GRAY));
@@ -218,6 +242,8 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 			case "shop" -> MoneyData.npcShops();
 			case "books" -> MoneyData.books();
 			case "cur" -> MoneyData.currencies();
+			case "bits" -> MoneyData.bits();
+			case "kat" -> MoneyData.kat();
 			default -> MoneyData.npcFromBazaar();
 		};
 		return MoneyEngine.sort(all, sortKey(), search);
@@ -228,6 +254,7 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 		String w = super.waiting();
 		if (w != null) return w;
 		if (kind().equals("npc") && NpcPrices.version() == 0) return "Loading NPC sell prices from Hypixel's item list...";
+		if (kind().equals("kat") && !AhPrices.loaded()) return "Loading auction house prices...";
 		return null;
 	}
 
@@ -247,7 +274,7 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 		String first = switch (kind()) {
 			case "forge" -> "Takes " + r.flag + (r.req.isEmpty() ? "" : " · requires " + r.req);
 			case "books" -> String.join(" · ", r.meta);
-			case "cur" -> String.join(" · ", r.meta);
+			case "cur", "bits", "kat" -> String.join(" · ", r.meta);
 			case "shop" -> r.meta.isEmpty() ? "" : r.meta.get(0);
 			default -> r.meta.isEmpty() ? "" : String.join(" · ", r.meta);
 		};
@@ -264,7 +291,8 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 		return switch (kind()) {
 			case "forge" -> "What you forge (x how many one forge makes). Click a row for the materials, a how-many calculator and more.";
 			case "books" -> "Two books of one level -> one of the next level. Click a row for the calculator and the live order book.";
-			case "cur" -> "What you buy with " + curNames()[2] + " (x how many per purchase). Hover for the NPC; click for every number.";
+			case "cur", "bits" -> "What you buy with " + names()[2] + " (x how many per purchase). Hover for the NPC; click for every number.";
+			case "kat" -> "The pet you buy -> the rarity Kat upgrades it to. Hover for the prices; click for every number.";
 			case "shop" -> "What you buy from the NPC (x how many per purchase). Hover for the NPC and where they are; click for the calculator.";
 			default -> "What you buy on the Bazaar to sell to an NPC. Click a row for the calculator and the live order book.";
 		};
@@ -275,7 +303,8 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 		return switch (kind()) {
 			case "forge" -> "forge recipes";
 			case "books" -> "book combinations";
-			case "cur" -> "things to buy";
+			case "cur", "bits" -> "things to buy";
+			case "kat" -> "Kat upgrades";
 			case "shop" -> "shop offers";
 			default -> "items";
 		};
@@ -293,9 +322,18 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 						+ " · locations: SkyHanni & the wiki";
 			}
 			case "books" -> "Two level-N books make one level N+1 in an anvil · enchant limits from NEU · Ultimate enchants left out";
+			case "kat" -> (AhPrices.loaded() ? "" : "AH prices loading · ") + "Buy on the AH, upgrade at Kat, sell on the AH · pet prices are lowest BIN, before AH fees · upgrades from NEU";
+			case "bits" -> {
+				int[] h = MoneyData.bitsHidden();
+				BazaarPrices.Price cookie = BazaarPrices.get("BOOSTER_COOKIE");
+				String c = cookie == null || !(cookie.instaBuy() > 0) ? ""
+						: " · a Booster Cookie (" + Format.shortCoins(cookie.instaBuy()) + ") gives 4,800 bits: " + Format.price(cookie.instaBuy() / 4800) + " coins per bit";
+				yield "Ranked by coins per bit" + c + (h[0] > 0 ? " · " + h[0] + " can't be sold" : "")
+						+ (h[1] > 0 ? " · " + h[1] + " AH-only hidden (Bazaar only)" : "");
+			}
 			case "cur" -> {
 				int[] h = MoneyData.curHidden();
-				yield "Ranked by coins per " + curNames()[1] + (h[0] > 0 ? " · " + h[0] + " can't be sold" : "")
+				yield "Ranked by coins per " + names()[1] + (h[0] > 0 ? " · " + h[0] + " can't be sold" : "")
 						+ (h[1] > 0 ? " · " + h[1] + " AH-only hidden (Bazaar only)" : "") + " · shop offers from NEU";
 			}
 			default -> "NPC prices from Hypixel's item list · selling to NPCs has no tax · these gaps close fast";
@@ -307,7 +345,8 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 		return switch (kind()) {
 			case "forge" -> "No forge recipes match.";
 			case "books" -> "No book combinations make a profit right now.";
-			case "cur" -> "Nothing bought with " + curNames()[2] + " has a market price right now.";
+			case "cur", "bits" -> "Nothing bought with " + names()[2] + " has a market price right now.";
+			case "kat" -> "No Kat upgrades have both pets listed on the AH right now.";
 			case "shop" -> "No NPC shop items sell for more than they cost right now.";
 			default -> "Nothing on the Bazaar is cheaper than an NPC pays right now.";
 		};
@@ -320,7 +359,8 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 			case "forge" -> switch (header) { case "Profit" -> "profit"; case "Per hr" -> "perHour"; case "Time" -> "time"; case "Best" -> best; default -> null; };
 			case "shop" -> switch (header) { case "Profit" -> "profit"; case "Return" -> "pct"; case "Best" -> best; default -> null; };
 			case "books" -> switch (header) { case "Profit" -> "profit"; case "Return" -> "pct"; case "Vol/wk" -> "vol"; case "Best" -> best; default -> null; };
-			case "cur" -> header.startsWith("Per ") ? "per" : switch (header) { case "Costs" -> "amt"; case "Sells for" -> "value"; default -> null; };
+			case "cur", "bits" -> header.startsWith("Per ") ? "per" : switch (header) { case "Costs" -> "amt"; case "Sells for" -> "value"; default -> null; };
+			case "kat" -> switch (header) { case "Profit" -> "profit"; case "Per day" -> "perHour"; case "Time" -> "time"; default -> null; };
 			default -> switch (header) { case "Profit" -> "profit"; case "Return" -> "pct"; case "For sale" -> "vol"; case "Best" -> "coins"; default -> null; };
 		};
 	}

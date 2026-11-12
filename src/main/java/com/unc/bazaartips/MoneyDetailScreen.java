@@ -16,7 +16,8 @@ public class MoneyDetailScreen extends ReportScreen {
 	private final String kind, key;
 
 	public MoneyDetailScreen(Screen parent, String kind, String key) {
-		super(switch (kind) { case "forge" -> "Forge"; case "books" -> "Books"; case "cur" -> "Currencies"; default -> "NPC flip"; }, parent);
+		super(switch (kind) { case "forge" -> "Forge"; case "books" -> "Books"; case "cur" -> "Currencies"; case "bits" -> "Bits"; case "kat" -> "Kat";
+			default -> "NPC flip"; }, parent);
 		this.kind = kind;
 		this.key = kind + ":" + key;
 		this.rowKey = key;
@@ -46,6 +47,8 @@ public class MoneyDetailScreen extends ReportScreen {
 				case "shop" -> MoneyData.npcShops();
 				case "books" -> MoneyData.books();
 				case "cur" -> MoneyData.currencies();
+				case "bits" -> MoneyData.bits();
+				case "kat" -> MoneyData.kat();
 				default -> MoneyData.npcFromBazaar();
 			};
 		} else {
@@ -57,6 +60,8 @@ public class MoneyDetailScreen extends ReportScreen {
 				case "shop" -> e.npcShops();
 				case "books" -> e.books(new java.util.ArrayList<>(BazaarPrices.ids()));
 				case "cur" -> e.currencies(Settings.curType);
+				case "bits" -> e.currencies("bits");
+				case "kat" -> e.kat();
 				default -> e.npcFromBazaar(List.of(rowKey));
 			};
 		}
@@ -73,6 +78,8 @@ public class MoneyDetailScreen extends ReportScreen {
 			case "shop" -> MoneyData.npcShops();
 			case "books" -> MoneyData.books();
 			case "cur" -> MoneyData.currencies();
+			case "bits" -> MoneyData.bits();
+			case "kat" -> MoneyData.kat();
 			default -> MoneyData.npcFromBazaar();
 		};
 		for (MoneyEngine.Row r : all) if (r.key.equals(rowKey)) return r;
@@ -145,7 +152,7 @@ public class MoneyDetailScreen extends ReportScreen {
 					Colors.RED, "", "", 0, "With your choices this doesn't make money right now, so there's nothing to show."));
 			return rows;
 		}
-		rows.addAll(MoneyReport.money(kind, r, qty(), Settings.taxLabel()));
+		rows.addAll(MoneyReport.money(kind.equals("bits") ? "cur" : kind, r, qty(), Settings.taxLabel()));
 		return rows;
 	}
 

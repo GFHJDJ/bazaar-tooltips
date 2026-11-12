@@ -23,8 +23,31 @@ public final class AhPrices {
 
 	/** Lowest BIN for an item (site ID format), or null if unknown / not loaded yet. */
 	public static Double get(String id) {
-		Double v = bins.get(id);
+		Map<String, Double> b = bins;
+		Double v = b.get(id);
+		if (v == null) {
+			String pet = petKey(id);
+			if (pet != null) v = b.get(pet);
+		}
 		return v != null && v > 0 ? v : null;
+	}
+
+	private static final java.util.regex.Pattern PET = java.util.regex.Pattern.compile("^([A-Z0-9_]+);([0-5])$");
+	private static final String[] RARITY = {"COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC"};
+
+	/**
+	 * The price list's name for a pet: the site writes pets as "MOSQUITO;3" (rarity 3 = Epic), the list as
+	 * "PET-MOSQUITO-EPIC" (its lowest BIN at any level below 100). Null when the ID isn't a pet's.
+	 */
+	static String petKey(String id) {
+		java.util.regex.Matcher m = PET.matcher(id);
+		if (!m.matches() || SiteData.isBookId(id)) return null;
+		return "PET-" + m.group(1) + "-" + RARITY[Integer.parseInt(m.group(2))];
+	}
+
+	/** Every item in the price list and its lowest BIN (for the AH tab). */
+	public static Map<String, Double> all() {
+		return bins;
 	}
 
 	public static boolean loaded() {

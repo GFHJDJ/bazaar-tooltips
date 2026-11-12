@@ -179,6 +179,8 @@ public final class MoneyReport {
 			case "NPC cost" -> "What the NPC charges for one purchase: coins plus any materials (priced on the bazaar or AH).";
 			case "Costs" -> "How much of the currency one purchase takes.";
 			case "Net value" -> "What one purchase sells for, minus any extra coins or items it costs.";
+			case "Total cost" -> "The pet's lowest BIN on the AH, plus Kat's coins and the materials.";
+			case "Profit / day" -> "Profit divided by how long Kat takes (at least a minute).";
 			default -> label.endsWith(" cost") ? "What two of the lower-level book cost, bought the way the Buy button says."
 					: label.endsWith(" sells for") ? "What the higher-level book sells for, the way the Sell button says, after tax."
 					: label.startsWith("Coins / ") ? "Net value divided by how much of the currency it costs: coins you get per one spent."
@@ -217,6 +219,7 @@ public final class MoneyReport {
 		rows.add(note(r.flag, Colors.AQUA, forge ? "How long one forge takes." : npcBz ? "Buy it on the Bazaar, sell it to an NPC."
 				: tab.equals("books") ? "Combine two books in an anvil (costs XP levels, not coins)."
 				: tab.equals("cur") ? "What one purchase costs in the currency."
+				: tab.equals("kat") ? "How long Kat takes to upgrade the pet."
 				: "Buy it from an NPC shop, sell it on the " + (r.flag.endsWith("AH") ? "Auction House." : "Bazaar.")));
 		if (!r.req.isEmpty()) {
 			rows.add(note("Requires " + r.req, Colors.WHITE, "What you need to forge this (Heart of the Mountain tier and/or a collection)."));
@@ -228,6 +231,8 @@ public final class MoneyReport {
 					: m.contains("bought / week") ? "How many of the lower-level book were insta-bought in the last 7 days (how easy it is to buy two)."
 					: m.contains("sold / week") ? "How many of the higher-level book were insta-sold in the last 7 days (how easy it is to sell)."
 					: m.startsWith("plus ") ? "Extra coins or items the NPC wants on top of the currency."
+					: m.startsWith("buy ") && m.contains(" · sell ") ? "The pet's lowest BIN on the AH now, and the upgraded pet's (before AH fees)."
+					: m.equals("needs materials") ? "Kat wants materials as well as coins; they're in the cost table below."
 					: m.startsWith("Seasonal") || m.startsWith("Mayor") || m.startsWith("Situational")
 							? "This NPC isn't always around (from the Hypixel SkyBlock Wiki). Change which NPCs show with the NPCs button."
 					: "The NPC and where to find them (area and x, y, z). Locations from SkyHanni's island maps and the Hypixel SkyBlock Wiki; 'unconfirmed' = not on current maps.";
@@ -247,7 +252,7 @@ public final class MoneyReport {
 		// ---- materials / cost table ----
 		if (!r.parts.isEmpty()) {
 			rows.add(Row.gap());
-			rows.add(Row.heading(r.partsLabel + (forge ? " (one forge)" : tab.equals("cur") ? "" : " (one purchase)"),
+			rows.add(Row.heading(r.partsLabel + (forge ? " (one forge)" : tab.equals("cur") || tab.equals("kat") ? "" : " (one purchase)"),
 					"Everything one " + (forge ? "forge" : "purchase") + " costs: each material's price and where it's priced (Bazaar, or AH lowest BIN)."));
 			for (MoneyEngine.Part p : r.parts) {
 				if (p.id() == null) {
@@ -261,7 +266,8 @@ public final class MoneyReport {
 		}
 		if (!r.note.isEmpty()) {
 			rows.add(Row.gap());
-			rows.add(note(r.note, Colors.GRAY, forge ? "How this forge works out." : tab.equals("cur") ? "Where to buy it and what it's worth." : "How to do this flip."));
+			rows.add(note(r.note, Colors.GRAY, forge ? "How this forge works out." : tab.equals("cur") ? "Where to buy it and what it's worth."
+					: tab.equals("kat") ? "How this upgrade works out." : "How to do this flip."));
 		}
 		if (r.market != null) CraftReport.marketRows(rows, r.name, r.market, true);
 		return rows;

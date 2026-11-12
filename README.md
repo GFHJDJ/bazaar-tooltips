@@ -34,7 +34,7 @@ Craft it (1 craft makes 9):
 
 Press **B** in game. To change the key, click the gear (⚙) next to Rounded, then the key button (or Options > Controls > Key Binds > Bazaar Tooltips). It opens on the tab you
 used last (or one you pick in the gear). Tabs along the top (they wrap onto two rows; hide the ones you don't use in the gear): **Crafts**, **Flipper**, **Advisor**, **NPC**, **Forge**, **Prices**, **Books**,
-**Minions**, **Profit/hr**, **Essence**, **Currency**, **Earnings**, **Orders** (most are ports of your website's tabs:
+**Minions**, **Profit/hr**, **Essence**, **Currency**, **Kat**, **Bits**, **AH**, **Earnings**, **Orders** (most are ports of your website's tabs:
 same data, same math, checked against the site's own script number for number). Your coins, free slots,
 tax and Rounded setting are shared by every tab.
 
@@ -180,6 +180,32 @@ cheapest auction** line that runs /viewauction for you.
 What to buy with copper, medals, pelts, North Stars, pests, Rusty Coins, Bingo Points, kernels,
 Carnival Tokens or Gems, ranked by coins per one. The **Currency** button switches between them.
 
+## Kat tab
+
+Buy a pet on the AH, have Kat upgrade its rarity, sell it on the AH. Each upgrade shows what it costs (the pet's lowest
+BIN, plus Kat's coins and materials), what the upgraded pet sells for, the profit, profit per day of Kat time, and how
+long Kat takes. **Buy** sets how the materials are bought. Upgrade costs and times are from NEU (the site's data).
+Pet prices are lowest BINs (usually low-level pets, before AH fees), so check matching listings before you buy.
+
+## Bits tab
+
+What to buy with bits at Elizabeth, ranked by coins per bit (what it sells for, minus any extra cost, divided by its
+bits price). Same buttons as the Currency tab: Buy, Sell, Bazaar only (hides things that only sell on the AH), Sort,
+Tax. The bottom line shows what a Booster Cookie costs and what that makes each of its 4,800 bits cost you.
+
+## AH tab
+
+Three views (the **View** button):
+- **AH -> Bazaar**: items someone listed on the AH for less than they sell for on the Bazaar. Buy the listing, sell
+  it on the Bazaar. The AH price list also carries Bazaar quotes for most Bazaar items, so a "lowest BIN" within 3% of
+  the Bazaar's own price isn't counted as an auction.
+- **AH crafts**: recipes needing at least one thing that's only on the AH (at its lowest BIN; the rest at Bazaar
+  prices), whose result sells on the Bazaar for more. Hover a row for the ingredients and where each is priced.
+- **Lookup**: type 2+ letters in Search for any AH item's lowest BIN, and for craftable items the craft cost and
+  craft -> AH profit (before AH fees). Pets show as "Seal pet (Epic)".
+
+**Sell**, **Risky**, **Low vol** and **Tax** work like on the other tabs. AH prices are refreshed every 5 minutes.
+
 ## Earnings tab (what you actually made)
 
 Every other tab says what *should* make money. This one says what *did*. Whenever Hypixel tells you in chat that you
@@ -249,7 +275,7 @@ The ⚙ next to Rounded (it scrolls when the window is small):
 ## What it connects to
 
 Only public data: Hypixel's bazaar and item list, your site's unlock lookup (only when you press Load),
-AH lowest BINs (lb.tricked.dev, or moulberry.codes as a backup; NPC, Forge, Currency and Essence tabs) and
+AH lowest BINs (lb.tricked.dev, or moulberry.codes as a backup; NPC, Forge, Currency, Kat, Bits, AH and Essence tabs) and
 SkyCofl (Flipper price history, Essence listing checks). The only commands it ever sends in game are /bz
 (when you click /bz) and /viewauction (when you click "Open the cheapest auction" on the Essence tab).
 
@@ -262,7 +288,7 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.15.1.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.16.0.jar`.
 
 The build also runs the tests in `src/test` (prices, risk warnings, flips, crafts, NPC and forge math, the advisor,
 best amounts, order tracking, alerts, earnings). If one
@@ -271,7 +297,7 @@ fails, the build fails and no jar is made, here and on GitHub.
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.15.1.jar`
+- `bazaar-tooltips-0.16.0.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
@@ -294,6 +320,8 @@ Open the folder in IntelliJ IDEA, let it import, then run the Gradle task `runCl
 - `AhPrices.java` - AH lowest BINs. `MoneyData.java` - builds the three tabs' lists. `MoneyReport.java` - their details lines.
 - `OrderTracker.java` + `OrdersScreen.java` - your bazaar orders and outbid alerts.
 - `Earnings.java` + `EarningsScreen.java` - the Earnings tab: your real trades and profit.
+- `MoneyEngine.kat()` - the Kat tab (on `MoneyScreen`); the Bits tab is `MoneyEngine.currencies("bits")`.
+- `AhEngine.java` + `AhScreen.java` - the AH tab. `Cycle.java` - left / right click stepping through a button's options.
 - `Overlays.java` + `ProductSummary.java` - the panel in the bazaar and the orders box on your screen.
 - `SettingsScreen.java` + `TabsPickScreen.java` - the gear's settings. `FlipAlerts.java` - flip chat alerts.
 - `Advisor.java` + `AdvisorScreen.java`, `AdvisorDetailScreen.java`, `AdvisorExcludeScreen.java` - the Coin advisor.

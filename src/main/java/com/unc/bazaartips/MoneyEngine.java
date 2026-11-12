@@ -617,11 +617,59 @@ public final class MoneyEngine {
 				{"pelt", "Pelts", "pelt", "pelts"}, {"northstar", "North Stars", "North Star", "North Stars"}, {"pest", "Pests", "pest", "pests"},
 				{"rusty", "Rusty Coins", "Rusty Coin", "Rusty Coins"}, {"bingo", "Bingo Points", "Bingo Point", "Bingo Points"},
 				{"kernel", "Kernels", "kernel", "kernels"}, {"carnival", "Carnival Tokens", "Carnival Token", "Carnival Tokens"},
-				{"gem", "SkyBlock Gems (bought with real money)", "Gem", "Gems"}};
+				{"gem", "SkyBlock Gems (bought with real money)", "Gem", "Gems"}, {"bits", "Bits", "bit", "bits"}};
 		for (String[] r : c) CURRENCIES.put(r[0], new String[] {r[1], r[2], r[3]});
 	}
 
 	public int unsellable, viaAH;
+
+	// ---------------------------------------------------------------- Kat pet upgrades (renderKat)
+
+	/** Buy a pet on the AH, have Kat upgrade its rarity (coins + materials + time), sell it on the AH. Both pets need a listing. */
+	public List<Row> kat() {
+		List<Row> rows = new ArrayList<>();
+		for (SiteData.Kat r : SiteData.kat()) {
+			Double buy = x.ahBin().apply(r.from()), sell = x.ahBin().apply(r.to());
+			if (buy == null || sell == null || !(buy > 0) || !(sell > 0)) continue;
+			Cost mats = costOf(r.in(), r.coins());
+			if (mats == null) continue;
+			double cost = buy + mats.total(), profit = sell - cost, hrs = r.t() / 3600.0;
+			String from = SiteData.itemName(r.from()), to = SiteData.itemName(r.to());
+			int toRarity = Integer.parseInt(r.to().substring(r.to().indexOf(';') + 1));
+			Row row = new Row();
+			row.key = r.from() + ">" + r.to();
+			row.itemId = r.to();
+			row.name = to;
+			row.search = (from + " " + to + " " + r.to()).toLowerCase(Locale.ROOT);
+			row.profit = profit;
+			row.costEach = cost;
+			row.value = sell;
+			row.pct = cost > 0 ? profit / cost * 100 : 0;
+			row.perHour = profit / Math.max(hrs, 1.0 / 60);              // the site's profit / day, at least a minute
+			row.time = r.t();
+			row.title = from + " -> " + SiteData.rarity(toRarity);
+			row.flag = Amounts.duration(r.t());
+			String where = SiteData.npcWhere("KAT_NPC");
+			row.meta.add("Kat" + (where.isEmpty() ? "" : " · " + where));
+			row.meta.add("buy " + Format.coins(buy) + " · sell " + Format.coins(sell));
+			if (!r.in().isEmpty()) row.meta.add("needs materials");
+			row.stats.add(new String[] {"Total cost", Format.coins(cost)});
+			row.stats.add(new String[] {"Sells for", Format.coins(sell)});
+			row.stats.add(new String[] {"Profit", Format.signedCoins(profit)});
+			row.stats.add(new String[] {"Profit / day", Format.signedCoins(row.perHour * 24)});
+			List<Part> parts = new ArrayList<>();
+			parts.add(new Part(r.from(), from, 1, buy, buy, "AH"));
+			parts.addAll(mats.parts());
+			row.parts = List.copyOf(parts);
+			row.partsLabel = "Pet + Kat's price";
+			row.note = "Buy the " + from + " on the AH, give it to Kat" + (where.isEmpty() ? "" : " (" + where + ")") + " with the coins"
+					+ (r.in().isEmpty() ? "" : " and materials") + ", wait " + Amounts.duration(r.t()) + ", then sell the " + to
+					+ " on the AH (lowest BIN " + Format.coins(sell) + ", before AH fees). Lowest BINs are usually low-level pets; level, held "
+					+ "item and skin change the price a lot, so compare matching listings before you buy. Kat time-skip items aren't counted.";
+			rows.add(row);
+		}
+		return rows;
+	}
 
 	/** What to buy with a currency, ranked by coins per one of it. */
 	public List<Row> currencies(String type) {

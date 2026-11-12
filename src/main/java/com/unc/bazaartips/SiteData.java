@@ -27,6 +27,9 @@ public final class SiteData {
 	/** An NPC shop offer: pay coins + materials to get q of id. */
 	public record Shop(int index, String npc, String id, int q, double coins, List<Mat> in) {}
 
+	/** One Kat upgrade: pet "from" (ID;rarity) -> "to", for coins plus materials, taking t seconds. */
+	public record Kat(String from, String to, double coins, long t, List<Mat> in) {}
+
 	public record Mat(String id, int qty) {}
 
 	/** An NPC: name, and where to find them (area, coordinates) when known. */
@@ -34,6 +37,7 @@ public final class SiteData {
 
 	private static List<Forge> forge = List.of();
 	private static List<Shop> shops = List.of();
+	private static List<Kat> kat = List.of();
 	private static Map<String, Npc> npcs = Map.of();
 	private static Map<String, String[]> npcAvail = Map.of();
 	private static Map<String, Integer> stack = Map.of();
@@ -92,6 +96,24 @@ public final class SiteData {
 		for (String k : new String[] {"enchMax", "enchMap", "cur", "minions", "minProfit", "minStore", "comp", "sc"}) {
 			if (root.has(k)) x.add(k, root.get(k));
 		}
+		// The bits shop works like any other currency shop: add it to the list as currency "bits".
+		if (root.has("bits")) {
+			JsonArray cur = x.has("cur") ? x.getAsJsonArray("cur").deepCopy() : new JsonArray();
+			for (JsonElement e : root.getAsJsonArray("bits")) {
+				JsonObject b = e.getAsJsonObject().deepCopy();
+				b.addProperty("cur", "bits");
+				b.add("amt", b.remove("bits"));
+				cur.add(b);
+			}
+			x.add("cur", cur);
+		}
+		List<Kat> k = new ArrayList<>();
+		if (root.has("kat")) for (JsonElement e : root.getAsJsonArray("kat")) {
+			JsonObject o = e.getAsJsonObject();
+			k.add(new Kat(o.get("from").getAsString(), o.get("to").getAsString(), o.has("c") ? o.get("c").getAsDouble() : 0,
+					o.get("t").getAsLong(), mats(o.getAsJsonArray("in"))));
+		}
+		kat = List.copyOf(k);
 		extra = x;
 		forge = List.copyOf(f);
 		shops = List.copyOf(s);
@@ -114,6 +136,15 @@ public final class SiteData {
 
 	public static List<Forge> forge() {
 		return forge;
+	}
+
+	public static List<Kat> kat() {
+		return kat;
+	}
+
+	/** "Common", "Uncommon", ... for a pet rarity number (0 = Common). */
+	public static String rarity(int r) {
+		return r >= 0 && r < RARITY.length ? RARITY[r] : "tier " + r;
 	}
 
 	public static List<Shop> shops() {
