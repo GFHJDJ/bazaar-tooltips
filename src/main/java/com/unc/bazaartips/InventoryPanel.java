@@ -127,7 +127,9 @@ final class InventoryPanel {
 		InventoryValue.Totals t = InventoryValue.totals(rows);
 		List<ProductSummary.Line> out = new ArrayList<>();
 		out.add(new ProductSummary.Line("Worth now", Colors.GOLD, Format.shortCoins(t.now()), Colors.YELLOW, false));
-		if (t.withOffers() > t.now()) out.add(ProductSummary.Line.kv("With sell offers", Format.signedShortCoins(t.withOffers() - t.now()) + " more", Colors.AQUA));
+		if (t.withOffers() - t.now() >= 1000) {                // not worth a line for a few hundred coins
+			out.add(ProductSummary.Line.kv("With sell offers", Format.signedShortCoins(t.withOffers() - t.now()) + " more", Colors.AQUA));
+		}
 		if (t.npcCount() > 0) {
 			out.add(ProductSummary.Line.kv("Sell " + t.npcCount() + " to an NPC", Format.signedShortCoins(t.npcBeatsBazaar()) + " vs Bazaar", Colors.GREEN));
 		}
@@ -143,8 +145,8 @@ final class InventoryPanel {
 					r.best().equals("npc") ? Colors.GREEN : r.best().equals("ah") ? Colors.ORANGE : Colors.YELLOW, true));
 			shown++;
 		}
-		if (t.unpriced() > 0) out.add(ProductSummary.Line.note(t.unpriced() + " with no price (pets, gear...)", Colors.DARK_GRAY));
-		out.add(new ProductSummary.Line("Green = NPC pays more · AH = lowest BIN", Colors.DARK_GRAY, "", 0, false));
+		if (t.unpriced() > 0) out.add(ProductSummary.Line.note(t.unpriced() + " with no price", Colors.DARK_GRAY));
+		out.add(new ProductSummary.Line("Green: sell to NPC · AH: lowest BIN", Colors.DARK_GRAY, "", 0, false));
 		lines = out;
 		stamp = st;
 		return lines;
@@ -158,8 +160,8 @@ final class InventoryPanel {
 		int rightX = r[0] + r[2] + 4, rightRoom = inv.width - rightX - 4, leftRoom = r[0] - 8;
 		int room = Math.max(rightRoom, leftRoom);
 		if (room < 110) return;                               // no room at this GUI scale
-		int w = Math.min(room, 190);
+		int w = Math.min(room, 200);
 		int x = rightRoom >= leftRoom ? rightX : r[0] - 4 - w;
-		Overlays.panel(g, font, x, r[1], w, lines(), inv.height - 4);
+		Overlays.panel(g, font, x, r[1], w, lines(), inv.height - 4, Colors.PANEL_SOLID, true);
 	}
 }

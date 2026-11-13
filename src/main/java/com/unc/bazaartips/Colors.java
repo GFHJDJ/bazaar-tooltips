@@ -5,6 +5,8 @@ public final class Colors {
 	private Colors() {}
 
 	public static final int PANEL = 0xC0000000;
+	/** A nearly solid box, for panels drawn over busy things (the potion effects beside your inventory). */
+	public static final int PANEL_SOLID = 0xF0101010;
 	public static final int ROW_STRIPE = 0x14FFFFFF;
 	public static final int ROW_HOVER = 0x40FFFFFF;
 	public static final int DIVIDER = 0x40FFFFFF;

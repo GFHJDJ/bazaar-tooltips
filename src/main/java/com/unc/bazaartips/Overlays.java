@@ -91,6 +91,14 @@ final class Overlays {
 	 * number on its own row underneath (nothing gets cut short unless a single piece is wider than the box).
 	 */
 	static int panel(GuiGraphicsExtractor g, Font font, int x, int y, int w, List<ProductSummary.Line> lines, int maxY) {
+		return panel(g, font, x, y, w, lines, maxY, Colors.PANEL, false);
+	}
+
+	/**
+	 * bg = the box's colour; oneRow = never move a number to its own row: cut the label short ("..") so label and number share
+	 * one row (for lists of items with long names).
+	 */
+	static int panel(GuiGraphicsExtractor g, Font font, int x, int y, int w, List<ProductSummary.Line> lines, int maxY, int bg, boolean oneRow) {
 		int lh = font.lineHeight + 1, pad = 4, inner = w - 2 * pad;
 		record Row(String text, int color, int x, boolean right) {}
 		List<Row> rows = new ArrayList<>();
@@ -101,6 +109,9 @@ final class Overlays {
 			} else if (font.width(l.text()) + 6 + vw + indent <= inner) {
 				rows.add(new Row(l.text(), l.color(), indent, false));
 				rows.add(new Row(l.value(), l.valueColor(), 0, true));       // same row, right side (marked by right=true)
+			} else if (oneRow) {
+				rows.add(new Row(cut(font, l.text(), inner - indent - vw - 6), l.color(), indent, false));
+				rows.add(new Row(l.value(), l.valueColor(), 0, true));
 			} else {
 				rows.add(new Row(cut(font, l.text(), inner - indent), l.color(), indent, false));
 				rows.add(null);                                              // next row
@@ -112,7 +123,7 @@ final class Overlays {
 		int total = 0;
 		for (Row r : rows) if (r == null) total++;
 		int n = Math.min(total, Math.max(0, (maxY - y - 2 * pad) / lh));
-		g.fill(x, y, x + w, y + n * lh + 2 * pad, Colors.PANEL);
+		g.fill(x, y, x + w, y + n * lh + 2 * pad, bg);
 		int row = 0;
 		for (Row r : rows) {
 			if (r == null) {
