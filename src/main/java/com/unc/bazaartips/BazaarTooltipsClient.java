@@ -36,6 +36,7 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		Earnings.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-earnings.jsonl"));
 		Overlays.register();
 		InventoryPanel.register();
+		startUpdater();
 		// After each price update, build the list the flips screen will show (on the download thread, so opening it is instant).
 		BazaarPrices.afterRefresh = () -> {
 			CraftEngine.current().crafts(Settings.buy == Settings.Buy.ORDER, Settings.chains != Settings.Chains.EXCLUDE);
@@ -57,6 +58,7 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 				"key.bazaartips.open_flips", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, CATEGORY));
 		openKey = openFlips;
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			announceUpdate(client);
 			readOrders(client);
 			alertOrders(client);
 			alertFlips(client);
@@ -64,6 +66,36 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 				if (client.player != null) client.gui.setScreen(BaseScreen.screenFor(Settings.startTab.equals("last") ? Settings.tab : Settings.startTab));
 			}
 		});
+	}
+
+	// ---- updates ----
+
+	/** Starts the auto-updater with this mod's version and jar (from Fabric). */
+	private static void startUpdater() {
+		FabricLoader.getInstance().getModContainer(Updater.MOD_ID).ifPresent(c -> {
+			java.nio.file.Path jar = null;
+			try {
+				if (c.getOrigin().getKind() == net.fabricmc.loader.api.metadata.ModOrigin.Kind.PATH && c.getOrigin().getPaths().size() == 1) {
+					jar = c.getOrigin().getPaths().get(0);
+				}
+			} catch (Exception ignored) {
+				// not a plain jar: no self-update
+			}
+			Updater.start(c.getMetadata().getVersion().getFriendlyString(), jar);
+		});
+	}
+
+	/** Once a newer version has downloaded and you're in a world: one chat line, with a link to what's new. */
+	private static void announceUpdate(net.minecraft.client.Minecraft client) {
+		if (client.player == null) return;
+		Updater.Release r = Updater.takeMessage();
+		if (r == null) return;
+		client.player.sendSystemMessage(Component.literal("[Bazaar Tooltips] ").withStyle(ChatFormatting.GOLD)
+				.append(Component.literal("Version " + r.version() + " downloaded").withStyle(ChatFormatting.GREEN))
+				.append(Component.literal(": it installs when you close Minecraft. ").withStyle(ChatFormatting.GRAY))
+				.append(Component.literal("[What's new]").withStyle(ChatFormatting.AQUA).withStyle(s -> s
+						.withClickEvent(new net.minecraft.network.chat.ClickEvent.OpenUrl(java.net.URI.create(r.page())))
+						.withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.literal("Open the release page"))))));
 	}
 
 	// ---- the order tracker: read Manage Orders, alert when outbid ----

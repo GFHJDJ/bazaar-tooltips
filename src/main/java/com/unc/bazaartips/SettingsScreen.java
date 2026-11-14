@@ -63,6 +63,14 @@ public class SettingsScreen extends BaseScreen {
 		items.add(Item.button("Tabs shown", () -> (tabs().length - hiddenCount()) + " of " + tabs().length,
 				"Hide tabs you don't use so the rest fit on one row. Click to pick.",
 				() -> minecraft.gui.setScreen(new TabsPickScreen(this))));
+		items.add(Item.cycle("Auto-update", () -> onOff(Settings.autoUpdate),
+				"Checks GitHub for a new version when the game starts and every 6 hours, downloads it, and installs it when you close "
+						+ "Minecraft (a chat message tells you). Off = it never checks or downloads anything.",
+				d -> {
+					Settings.autoUpdate = !Settings.autoUpdate;
+					if (Settings.autoUpdate) Updater.checkNow();
+				}));
+		items.add(Item.button("Updates", Updater::status, "The update status. Click to check for a new version now.", Updater::checkNow));
 		items.add(Item.heading("Item tooltips", "The lines added when you hover a SkyBlock item anywhere."));
 		items.add(Item.cycle("Price lines", () -> onOff(Settings.tooltips),
 				"Bazaar insta-buy / insta-sell, 7-day volume and what an NPC pays, added to item tooltips. Off = no extra lines at all.",
@@ -202,6 +210,7 @@ public class SettingsScreen extends BaseScreen {
 			if (w instanceof Button b) {
 				b.setY(y);
 				b.visible = vis;
+				relabel(b, items.get(i).value().get(), buttonW);       // e.g. the update status changes while you look
 			} else if (w instanceof EditBox e) {
 				e.setY(y + 2);
 				e.visible = vis;

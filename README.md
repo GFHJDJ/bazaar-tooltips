@@ -306,16 +306,24 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.17.2.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.18.0.jar`.
 
 The build also runs the tests in `src/test` (prices, risk warnings, flips, crafts, NPC and forge math, the advisor,
 best amounts, order tracking, alerts, earnings). If one
 fails, the build fails and no jar is made, here and on GitHub.
 
+## Auto-update
+
+The mod checks this repo's Releases a little after Minecraft starts and every 6 hours. When there's a newer version it
+downloads it into `mods/.bazaartips-update` (Fabric doesn't load from there), checks it really is this mod at that
+version, and tells you in chat. When you close Minecraft it swaps the new jar in for the old one (on Windows a hidden
+PowerShell does it a second later, once Java has let go of the old file), so the next launch runs the new version.
+Turn it off with **Auto-update** in the gear; **Updates** shows the status and checks now when clicked.
+
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.17.2.jar`
+- `bazaar-tooltips-0.18.0.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
@@ -343,7 +351,7 @@ Open the folder in IntelliJ IDEA, let it import, then run the Gradle task `runCl
 - `Overlays.java` + `ProductSummary.java` - the panel in the bazaar and the orders box on your screen.
 - `SettingsScreen.java` + `TabsPickScreen.java` - the gear's settings. `FlipAlerts.java` - flip chat alerts.
 - `Advisor.java` + `AdvisorScreen.java`, `AdvisorDetailScreen.java`, `AdvisorExcludeScreen.java` - the Coin advisor.
-- `Settings.java` - your saved settings. `UnlockLookup.java` - My unlocks.
+- `Updater.java` - the auto-updater. `Settings.java` - your saved settings. `UnlockLookup.java` - My unlocks.
 - `FlipsScreen.java`, `FlipDetailScreen.java`, `SortScreen.java`, `FiltersScreen.java`, `BaseScreen.java`,
   `TableScreen.java`, `FlipperScreen.java`, `MoneyScreen.java`, `ReportScreen.java`, `FlipperDetailScreen.java`,
   `MoneyDetailScreen.java`, `PricesScreen.java`, `PriceDetailScreen.java`, `MinionScreen.java`, `MinionDetailScreen.java`,

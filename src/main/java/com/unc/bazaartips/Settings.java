@@ -123,6 +123,8 @@ public final class Settings {
 	/** The session profit box on your screen and where it sits; the Worth panel beside your inventory (closed until you click Worth). */
 	public static String earnHudCorner = "top-right";
 	public static boolean earnHud = true, invPanel = false;
+	/** Download new versions from GitHub and install them when the game closes. */
+	public static boolean autoUpdate = true;
 	public static java.util.LinkedHashSet<String> planExSrc = new java.util.LinkedHashSet<>(), planEx = new java.util.LinkedHashSet<>();
 	public static java.util.LinkedHashSet<String> profitRequire = new java.util.LinkedHashSet<>();
 	public static java.util.LinkedHashSet<String> profitExclude = new java.util.LinkedHashSet<>();
@@ -208,6 +210,7 @@ public final class Settings {
 			if (o.has("orderHud")) orderHud = o.get("orderHud").getAsBoolean();
 			if (o.has("earnHud")) earnHud = o.get("earnHud").getAsBoolean();
 			if (o.has("invPanel")) invPanel = o.get("invPanel").getAsBoolean();
+			if (o.has("autoUpdate")) autoUpdate = o.get("autoUpdate").getAsBoolean();
 			earnHudCorner = str(o, "earnHudCorner", earnHudCorner, "top-left", "top-right", "middle-left");
 			orderHudCorner = str(o, "orderHudCorner", orderHudCorner, "top-left", "top-right", "middle-left");
 			if (o.has("profitTier")) profitTier = Math.max(1, Math.min(12, o.get("profitTier").getAsInt()));
@@ -293,6 +296,7 @@ public final class Settings {
 			o.addProperty("orderHud", orderHud);
 			o.addProperty("earnHud", earnHud);
 			o.addProperty("invPanel", invPanel);
+			o.addProperty("autoUpdate", autoUpdate);
 			o.addProperty("earnHudCorner", earnHudCorner);
 			o.addProperty("orderHudCorner", orderHudCorner);
 			o.addProperty("profitTier", profitTier);
