@@ -87,12 +87,14 @@ public final class CraftReport {
 		// ---- ingredients ----
 		rows.add(Row.gap());
 		rows.add(Row.heading("Ingredients (" + c.ingredients().size() + ")",
-				"What 1 craft uses. '@' is the price each, 'max' the most you could pay each and still profit selling by sell offer."));
+				"What 1 craft uses. '@' is the price each; 'max' is the most you could pay each and not lose coins: selling by sell offer, "
+						+ "then by insta-sell."));
 		for (CraftEngine.Ingredient i : c.ingredients()) {
 			boolean ok = i.maxSO() > i.unit();
 			rows.add(new Row(Kind.LINE, 1, i.qty() + "x " + i.name() + (i.risky() ? " !" : ""), i.risky() ? Colors.ORANGE : Colors.WHITE,
 					"@ " + Format.price(i.unit()) + (i.viaCraft() ? " crafted" : c.mixed() ? (c.orderFor(i.id()) ? " order" : " insta") : ""),
-					"max " + (i.maxSO() > 0 ? Format.price(i.maxSO()) : "none"), ok ? Colors.GREEN : Colors.RED,
+					"max " + (i.maxSO() > 0 ? Format.price(i.maxSO()) : "none") + " / " + (i.maxIS() > 0 ? Format.price(i.maxIS()) : "none") + " insta",
+					ok ? Colors.GREEN : Colors.RED,
 					i.name() + ": 1 craft needs " + i.qty() + ". "
 							+ (i.viaCraft() ? "Cheaper to craft than to buy, at " + Format.price(i.unit()) + " each. "
 									: (c.orderFor(i.id()) ? "Buy order" : "Insta-buy") + " price " + Format.price(i.unit()) + " each. ")
@@ -283,7 +285,8 @@ public final class CraftReport {
 	private static void chainRows(List<Row> rows, CraftEngine.Part item, double totalQty, int depth, CraftEngine.Ingredient top, CraftEngine.Craft c) {
 		String bought = c.orderFor(item.id()) ? "buy order" : "insta-buy";
 		Recipes.Recipe rec = item.viaCraft() ? Recipes.get(item.id()) : null;
-		String note = item.viaCraft() ? "crafted, not bought" : bought + " at " + Format.price(item.unit()) + " ea";
+		String note = (item.viaCraft() ? "crafted, not bought" : bought + " at " + Format.price(item.unit()) + " ea")
+				+ (depth == 0 && top != null && !item.viaCraft() ? " · max " + (top.maxSO() > 0 ? Format.price(top.maxSO()) : "none") : "");
 		String explain = Format.count(totalQty) + "x " + item.name() + ": " + note + "."
 				+ (depth == 0 && top != null ? " Profit up to " + (top.maxSO() > 0 ? Format.price(top.maxSO()) : "none") + " each (sell offer) / "
 						+ (top.maxIS() > 0 ? Format.price(top.maxIS()) : "none") + " (insta-sell): the most you could pay and still profit." : "");

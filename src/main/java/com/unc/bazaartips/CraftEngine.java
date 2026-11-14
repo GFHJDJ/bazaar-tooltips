@@ -676,6 +676,13 @@ public final class CraftEngine {
 			long q = Math.round(e.getValue());
 			BazaarPrices.Price it = prices.apply(e.getKey());
 			String nm = Recipes.name(e.getKey());
+			// the most you could pay for it and still profit, selling the way this list does (only for a direct ingredient)
+			String max = "";
+			for (Ingredient i : c.ingredients()) {
+				if (!i.id().equals(e.getKey()) || i.viaCraft()) continue;
+				double m = pick == Sell.OFFER ? i.maxSO() : i.maxIS();
+				max = " · max " + (m > 0 ? Format.price(m) : "none") + " each to still profit";
+			}
 			if (it == null) {
 				lines.add(new ShopLine("Buy " + Format.count(q) + "x " + nm, Double.NaN, false, "no bazaar price", List.of()));
 				continue;
@@ -684,7 +691,7 @@ public final class CraftEngine {
 				double at = orderBuyAt(it);
 				spend += q * at;
 				lines.add(new ShopLine("Buy " + Format.count(q) + "x " + nm, q * at, false,
-						"buy order at " + Format.price(at) + " each (0.1 above the top buy order)", List.of(at)));
+						"buy order at " + Format.price(at) + " each (0.1 above the top buy order)" + max, List.of(at)));
 			} else {
 				BookWalk w = walkBook(it.sellOffers(), q);
 				spend += w.total();
@@ -698,7 +705,7 @@ public final class CraftEngine {
 				boolean range = !Double.isNaN(first) && last > first;
 				lines.add(new ShopLine("Buy " + Format.count(q) + "x " + nm, w.total(), false,
 						"insta-buy, avg " + Format.price(w.total() / q) + " each"
-								+ (range ? " (from " + Format.price(first) + " up to " + Format.price(last) + ")" : ""),
+								+ (range ? " (from " + Format.price(first) + " up to " + Format.price(last) + ")" : "") + max,
 						range ? List.of(w.total() / q, first, last) : List.of(w.total() / q)));
 			}
 		}
