@@ -280,12 +280,12 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		int shown = ingredients.size() <= MAX_INGREDIENT_LINES + 1 ? ingredients.size() : MAX_INGREDIENT_LINES;
 		if (ingredients.size() == 1) {
 			var in = ingredients.get(0);
-			lines.add(Component.literal("  Needs " + in.qty() + "x " + in.name()).withStyle(ChatFormatting.DARK_GRAY));
+			lines.add(Component.literal("  Needs " + in.qty() + "x " + in.name()).withStyle(ChatFormatting.DARK_GRAY).append(maxPay(in)));
 		} else {
-			lines.add(Component.literal("  Needs:").withStyle(ChatFormatting.DARK_GRAY));
+			lines.add(Component.literal("  Needs (max = most you can pay each and not lose coins):").withStyle(ChatFormatting.DARK_GRAY));
 			for (int i = 0; i < shown; i++) {
 				var in = ingredients.get(i);
-				lines.add(Component.literal("    " + in.qty() + "x " + in.name()).withStyle(ChatFormatting.DARK_GRAY));
+				lines.add(Component.literal("    " + in.qty() + "x " + in.name()).withStyle(ChatFormatting.DARK_GRAY).append(maxPay(in)));
 			}
 			if (ingredients.size() > shown) {
 				lines.add(Component.literal("    +" + (ingredients.size() - shown) + " more (press B, click it for all)")
@@ -299,6 +299,16 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 			lines.add(Component.literal("  ! " + craft.warnings().get(0)).withStyle(
 					craft.risk() == Risk.Level.HIGH ? ChatFormatting.RED : ChatFormatting.GOLD));
 		}
+	}
+
+	/**
+	 * " · max 1,250.5": the most you could pay for one of this ingredient (the others at today's prices) and still not lose
+	 * coins selling by sell offer. Green when today's price is under it, red when it's already over.
+	 */
+	private static Component maxPay(CraftEngine.Ingredient in) {
+		boolean ok = in.maxSO() > 0 && in.unit() <= in.maxSO();
+		return Component.literal(" · max ").withStyle(ChatFormatting.DARK_GRAY)
+				.append(Component.literal(in.maxSO() > 0 ? Format.price(in.maxSO()) : "none").withStyle(ok ? ChatFormatting.GREEN : ChatFormatting.RED));
 	}
 
 	/** One way of buying the ingredients: its cost per item, then profit for each way of selling. */

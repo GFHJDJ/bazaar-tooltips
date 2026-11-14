@@ -115,10 +115,11 @@ public class FlipsScreen extends TableScreen<CraftEngine.Craft> {
 			}
 			return sb.toString();
 		}
-		StringBuilder sb = new StringBuilder();
+		// each ingredient, what it costs now, and the most you could pay for it (the rest at today's prices) and not lose coins
+		StringBuilder sb = new StringBuilder("Max you can pay each without losing coins (selling by sell offer):");
 		for (CraftEngine.Ingredient i : c.ingredients()) {
-			if (!sb.isEmpty()) sb.append(", ");
-			sb.append(i.qty()).append("x ").append(i.name());
+			sb.append("\n").append(i.qty()).append("x ").append(i.name()).append(": now ").append(Format.price(i.unit())).append(", max ")
+					.append(i.maxSO() > 0 ? Format.price(i.maxSO()) : "none (loses at any price)");
 		}
 		return sb.toString();
 	}

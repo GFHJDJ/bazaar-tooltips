@@ -10,7 +10,7 @@ Bazaar price for all 64: Insta-buy 83,200 | Insta-sell 80,000
 Traded last 7 days: 1.2M insta-bought, 980k insta-sold
 NPC pays: 1,280 each | 81,920 for all 64
 Craft it (1 craft makes 9):
-  Needs 160x Block of Diamond
+  Needs 160x Block of Diamond · max 72.2
   Insta-buying ingredients: costs 1,244.4 per item
     Profit per item: +39.3 by sell offer | -10.1 by insta-sell
   Ingredients by buy order: costs 1,155.6 per item
@@ -27,7 +27,9 @@ Craft it (1 craft makes 9):
 - **Craft it**: the cheapest recipe right now, what the ingredients cost per item you make (two ways:
   insta-buying them, or with buy orders, which is cheaper but you wait), and the profit per item if you
   sell by sell offer or insta-sell, after bazaar tax (1.25% unless you change it on the B screen).
-  Only shows when the item and every ingredient are on the bazaar.
+  Only shows when the item and every ingredient are on the bazaar. **max** after each ingredient is the most you could
+  pay for one (the rest at today's prices) and not lose coins selling by sell offer: green = today's price is under it.
+  Hovering a craft on the Crafts tab lists the same for every ingredient.
 - Prices refresh every 60 seconds. A red "Prices are 5m old" line shows if updates stop.
 
 ## The bazaar screen (press B)
@@ -310,7 +312,7 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.18.1.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.18.2.jar`.
 
 The build also runs the tests in `src/test` (prices, risk warnings, flips, crafts, NPC and forge math, the advisor,
 best amounts, order tracking, alerts, earnings). If one
@@ -327,7 +329,7 @@ Turn it off with **Auto-update** in the gear; **Updates** shows the status and c
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.18.1.jar`
+- `bazaar-tooltips-0.18.2.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
