@@ -229,9 +229,13 @@ trade down. Nothing to set up: just trade.
 
 - **Profit**: for items you both bought and sold, what you sold them for minus what those same items cost you (the
   average of what you paid). With coins per hour, counted from the first trade shown.
+- **Crafts count too**: sell something you didn't buy, but crafted from ingredients you did buy here (every
+  ingredient, in the amounts the recipe needs), and those ingredients' cost is counted against the sale: buy 80 of
+  each robot part, sell 80 Precursor Apparatus, and you see the real profit. The ingredients stop counting as held.
 - **Coins in - coins out**: everything earned minus everything spent. Below zero while you still hold stock.
 - **Still holding**: bought and not sold yet, at what you paid (items you used in a craft stay here).
-- **Other sales**: coins from selling things the mod never saw you buy (farmed, crafted, bought earlier). Real coins,
+- **Other sales**: coins from selling things with no tracked cost (farmed, bought earlier, or crafted from things the
+  mod didn't see you buy). Real coins,
   but there's no buy price to work a profit out from.
 - **Show**: this session, today, the last 7 days, or all time. Below the totals, one row per item (bought, spent,
   sold, earned, profit, holding); click a column name to sort, click an item for its order book.
@@ -306,7 +310,7 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.18.0.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.18.1.jar`.
 
 The build also runs the tests in `src/test` (prices, risk warnings, flips, crafts, NPC and forge math, the advisor,
 best amounts, order tracking, alerts, earnings). If one
@@ -323,7 +327,7 @@ Turn it off with **Auto-update** in the gear; **Updates** shows the status and c
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.18.0.jar`
+- `bazaar-tooltips-0.18.1.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)

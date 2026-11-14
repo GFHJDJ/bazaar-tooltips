@@ -30,12 +30,19 @@ public final class Earnings {
 	public record Trade(long at, Kind kind, String name, long qty, double coins, boolean instant) {}
 
 	/**
-	 * One item over a period. profit = coins from the ones you sold minus what those ones cost you (only for items
-	 * both bought and sold here; matched = how many). otherSales = coins from selling more than you'd bought here
-	 * (things you farmed, crafted or already had). holding / holdingCost = bought here and not sold here yet (as of now).
+	 * One item over a period. profit = coins from the ones you sold minus what those ones cost you: ones you bought here
+	 * (matched = how many), and ones you crafted from ingredients you bought here (crafted = how many, craftCost = what
+	 * those ingredients cost). otherSales = coins from selling ones with no tracked cost (farmed, already had).
+	 * holding / holdingCost = bought here and not sold or crafted into something sold yet (as of now).
+	 * usedInCrafts = how many went into crafting something you sold.
 	 */
 	public record Row(String name, long bought, double spent, long sold, double earned, double profit, long matched,
-			double otherSales, long holding, double holdingCost) {}
+			double otherSales, long holding, double holdingCost, long crafted, double craftCost, long usedInCrafts) {
+		/** Whether any of the sales had a known cost (so the profit means something). */
+		public boolean hasProfit() {
+			return matched > 0 || crafted > 0;
+		}
+	}
 
 	/** A period's totals. from = when counting starts; firstAt = the first trade in the period (0 = none). */
 	public record Summary(long from, long firstAt, int trades, double spent, double earned, double profit, double otherSales,
@@ -136,19 +143,35 @@ public final class Earnings {
 	 * you (so selling today what you bought yesterday shows today's profit correctly), but not towards the totals.
 	 */
 	public static Summary summarize(List<Trade> all, long from) {
+		return summarize(all, from, OrderTracker::productFor, Recipes::get);
+	}
+
+	/**
+	 * idOf = the Bazaar product for an item name (null if unknown); recipes = its recipe (null if none). Selling something
+	 * you didn't buy here but crafted from ingredients you did buy (each ingredient bought here, in the amounts the recipe
+	 * needs) counts those ingredients' cost against the sale.
+	 */
+	public static Summary summarize(List<Trade> all, long from, java.util.function.Function<String, String> idOf,
+			java.util.function.Function<String, Recipes.Recipe> recipes) {
 		final class Acc {
-			String name;
-			double held, heldCost;                    // bought here and not sold yet: how many, and what they cost
-			long bought, sold, matched;
-			double spent, earned, profit, other;
+			String name, id;
+			double held, heldCost;                    // bought here and not sold or crafted away yet: how many, and what they cost
+			long bought, sold, matched, crafted, used;
+			double spent, earned, profit, other, craftCost;
 			boolean inPeriod;
 		}
 		Map<String, Acc> accs = new LinkedHashMap<>();
+		Map<String, String> ids = new java.util.HashMap<>();
 		int count = 0;
 		long firstAt = 0;
 		for (Trade t : all) {
-			Acc a = accs.computeIfAbsent(key(t.name()), k -> new Acc());
+			String id = ids.computeIfAbsent(key(t.name()), k -> {
+				String v = idOf.apply(t.name());
+				return v == null ? "" : v;
+			});
+			Acc a = accs.computeIfAbsent(id.isEmpty() ? "name:" + key(t.name()) : id, k -> new Acc());
 			a.name = t.name();
+			a.id = id.isEmpty() ? null : id;
 			boolean in = t.at() >= from;
 			if (in) {
 				a.inPeriod = true;
@@ -172,12 +195,40 @@ public final class Earnings {
 					a.held = 0;
 					a.heldCost = 0;
 				}
+				// More sold than bought: were the rest crafted from ingredients bought here?
+				double rest = t.qty() - match, crafted = 0, craftCost = 0;
+				Recipes.Recipe rec = rest > 0 && a.id != null ? recipes.apply(a.id) : null;
+				if (rec != null && rec.output() > 0 && !rec.ingredients().isEmpty()) {
+					double crafts = rest / rec.output();
+					for (Recipes.Ing ing : rec.ingredients()) {
+						Acc ia = accs.get(ing.id());
+						crafts = Math.min(crafts, ia == null || ia == a ? 0 : ia.held / ing.qty());
+					}
+					if (crafts > 1e-9) {
+						for (Recipes.Ing ing : rec.ingredients()) {
+							Acc ia = accs.get(ing.id());
+							double take = crafts * ing.qty(), c = ia.heldCost * take / ia.held;
+							ia.held -= take;
+							ia.heldCost -= c;
+							if (ia.held < 1e-9) {
+								ia.held = 0;
+								ia.heldCost = 0;
+							}
+							ia.used += Math.round(take);
+							craftCost += c;
+						}
+						crafted = crafts * rec.output();
+					}
+				}
+				double craftedCoins = t.coins() * crafted / t.qty();
 				if (in) {
 					a.sold += t.qty();
 					a.earned += t.coins();
 					a.matched += Math.round(match);
-					a.profit += matchedCoins - cost;
-					a.other += t.coins() - matchedCoins;
+					a.crafted += Math.round(crafted);
+					a.craftCost += craftCost;
+					a.profit += matchedCoins - cost + craftedCoins - craftCost;
+					a.other += t.coins() - matchedCoins - craftedCoins;
 				}
 			}
 		}
@@ -186,7 +237,8 @@ public final class Earnings {
 		long holdItems = 0;
 		for (Acc a : accs.values()) {
 			if (!a.inPeriod) continue;
-			rows.add(new Row(a.name, a.bought, a.spent, a.sold, a.earned, a.profit, a.matched, a.other, Math.round(a.held), a.heldCost));
+			rows.add(new Row(a.name, a.bought, a.spent, a.sold, a.earned, a.profit, a.matched, a.other, Math.round(a.held), a.heldCost,
+					a.crafted, a.craftCost, a.used));
 			spent += a.spent;
 			earned += a.earned;
 			profit += a.profit;

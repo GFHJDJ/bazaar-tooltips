@@ -46,14 +46,14 @@ public class EarningsScreen extends TableScreen<Earnings.Row> {
 	@Override
 	protected List<Column<Earnings.Row>> columns() {
 		return List.of(
-				new Column<>("Profit", "Profit: what you sold these for minus what those same items cost you. Only counts items you both bought and "
-						+ "sold on the bazaar while the mod was watching (the cost is the average of what you paid).",
-						r -> r.matched() > 0 ? Format.signedShortCoins(r.profit()) : "-", r -> r.matched() > 0 ? Colors.profit(r.profit()) : Colors.GRAY),
+				new Column<>("Profit", "Profit: what you sold these for minus what they cost you: the ones you bought here (average price), and the "
+						+ "ones you crafted from ingredients you bought here (what those ingredients cost). '-' = no tracked cost (farmed, or bought before).",
+						r -> r.hasProfit() ? Format.signedShortCoins(r.profit()) : "-", r -> r.hasProfit() ? Colors.profit(r.profit()) : Colors.GRAY),
 				new Column<>("Bought", "Bought: how many you bought (insta-buys and claimed buy orders).", r -> Format.count(r.bought()), r -> Colors.GRAY),
 				new Column<>("Spent", "Spent: the coins those cost.", r -> Format.shortCoins(r.spent()), r -> Colors.YELLOW),
 				new Column<>("Sold", "Sold: how many you sold (insta-sells and claimed sell offers).", r -> Format.count(r.sold()), r -> Colors.GRAY),
 				new Column<>("Earned", "Earned: the coins you got for those, as Hypixel's message reports them.", r -> Format.shortCoins(r.earned()), r -> Colors.YELLOW),
-				new Column<>("Holding", "Holding: bought here and not sold here yet, as of now (or used for something else, like a craft).",
+				new Column<>("Holding", "Holding: bought here and not sold yet, as of now. Crafting it into something you sell on the bazaar takes it off.",
 						r -> r.holding() > 0 ? Format.count(r.holding()) : "-", r -> Colors.GRAY));
 	}
 
@@ -78,12 +78,12 @@ public class EarningsScreen extends TableScreen<Earnings.Row> {
 	// ---- the totals above the list ----
 
 	private static final String[] INTRO_EXPLAIN = {
-			"Profit: for everything you both bought and sold on the bazaar, what you sold it for minus what it cost you. This is the real "
-					+ "number: it's from Hypixel's own chat messages, not an estimate. Per hour counts from the first trade shown.",
+			"Profit: for everything you sold that you bought on the bazaar (or crafted from ingredients you bought there), what you sold it for "
+					+ "minus what it cost you. It's from Hypixel's own chat messages, not an estimate. Per hour counts from the first trade shown.",
 			"Coins in minus coins out: everything you got from selling minus everything you spent buying. It's below zero while you're still "
 					+ "holding what you bought.",
 			"Still holding: what you bought here and haven't sold here yet, at what you paid. Items you used up (in a craft, say) stay here.",
-			"Other sales: coins from selling things you didn't buy here while the mod was watching (farmed, crafted, or bought earlier). "
+			"Other sales: coins from selling things with no tracked cost: not bought here, and not crafted from ingredients bought here (farmed, or bought earlier). "
 					+ "They're real coins, but with no buy price there's no profit to work out."};
 
 	@Override
@@ -146,7 +146,7 @@ public class EarningsScreen extends TableScreen<Earnings.Row> {
 
 	@Override
 	protected int nameColor(Earnings.Row r) {
-		return r.matched() > 0 && r.profit() < 0 ? Colors.RED : Colors.WHITE;
+		return r.hasProfit() && r.profit() < 0 ? Colors.RED : Colors.WHITE;
 	}
 
 	@Override
@@ -154,7 +154,9 @@ public class EarningsScreen extends TableScreen<Earnings.Row> {
 		List<String> parts = new ArrayList<>();
 		if (r.bought() > 0) parts.add("bought " + Format.count(r.bought()) + " at " + Format.price(r.spent() / r.bought()) + " each");
 		if (r.sold() > 0) parts.add("sold " + Format.count(r.sold()) + " at " + Format.price(r.earned() / r.sold()) + " each");
-		if (r.matched() > 0) parts.add("profit " + Format.signedCoins(r.profit()) + " on " + Format.count(r.matched()));
+		if (r.crafted() > 0) parts.add(Format.count(r.crafted()) + " crafted from ingredients you bought (" + Format.coins(r.craftCost()) + ")");
+		if (r.hasProfit()) parts.add("profit " + Format.signedCoins(r.profit()) + " on " + Format.count(r.matched() + r.crafted()));
+		if (r.usedInCrafts() > 0) parts.add(Format.count(r.usedInCrafts()) + " crafted into something you sold");
 		if (r.otherSales() > 0) parts.add(Format.coins(r.otherSales()) + " from ones with no buy seen");
 		if (r.holding() > 0) parts.add("holding " + Format.count(r.holding()) + " (cost " + Format.coins(r.holdingCost()) + ")");
 		return String.join(" · ", parts);

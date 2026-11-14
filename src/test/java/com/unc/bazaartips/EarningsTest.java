@@ -87,6 +87,59 @@ class EarningsTest {
 		assertEquals(s.earned(), s.profit() + s.otherSales() + 100, 1e-9);   // every coin earned is accounted for
 	}
 
+	private static final java.util.Map<String, String> IDS = java.util.Map.of("precursor apparatus", "PRECURSOR_APPARATUS",
+			"control switch", "CONTROL_SWITCH", "ftx 3070", "FTX_3070", "synthetic heart", "SYNTHETIC_HEART", "melon", "MELON");
+	private static final Recipes.Recipe PRECURSOR = new Recipes.Recipe("PRECURSOR_APPARATUS", "Precursor Apparatus", 1, List.of(
+			new Recipes.Ing("CONTROL_SWITCH", 1), new Recipes.Ing("FTX_3070", 1), new Recipes.Ing("SYNTHETIC_HEART", 2)), "");
+
+	private static Earnings.Summary crafted(List<Earnings.Trade> trades) {
+		return Earnings.summarize(trades, 0, n -> IDS.get(n.toLowerCase(java.util.Locale.ROOT)), id -> id.equals("PRECURSOR_APPARATUS") ? PRECURSOR : null);
+	}
+
+	private static Earnings.Row row(Earnings.Summary s, String name) {
+		return s.rows().stream().filter(r -> r.name().equals(name)).findFirst().orElseThrow();
+	}
+
+	@Test
+	void sellingWhatYouCraftedFromBoughtIngredientsCountsTheirCost() {
+		Earnings.Summary s = crafted(List.of(
+				buy(1, "Control Switch", 80, 15_000_000), buy(2, "FTX 3070", 80, 8_000_000), buy(3, "Synthetic Heart", 160, 40_000_000),
+				sell(10, "Precursor Apparatus", 80, 70_000_000)));
+		Earnings.Row p = row(s, "Precursor Apparatus");
+		assertEquals(80, p.crafted());
+		assertEquals(63_000_000, p.craftCost(), 1e-6);
+		assertEquals(7_000_000, p.profit(), 1e-6);
+		assertTrue(p.hasProfit());
+		assertEquals(0, p.otherSales(), 1e-6);
+		assertEquals(0, row(s, "Control Switch").holding());              // used up by the craft
+		assertEquals(160, row(s, "Synthetic Heart").usedInCrafts());
+		assertEquals(0, s.holdingItems());
+		assertEquals(7_000_000, s.profit(), 1e-6);
+	}
+
+	@Test
+	void onlyAsManyCraftsAsEveryIngredientCovers() {
+		Earnings.Summary s = crafted(List.of(
+				buy(1, "Control Switch", 80, 8_000_000), buy(2, "FTX 3070", 30, 3_000_000), buy(3, "Synthetic Heart", 160, 16_000_000),
+				sell(10, "Precursor Apparatus", 80, 80_000_000)));
+		Earnings.Row p = row(s, "Precursor Apparatus");
+		assertEquals(30, p.crafted());                                    // only 30 FTX 3070s were bought
+		assertEquals(30 * 100_000 + 30 * 100_000 + 60 * 100_000, p.craftCost(), 1e-6);
+		assertEquals(30_000_000 - p.craftCost(), p.profit(), 1e-6);
+		assertEquals(50_000_000, p.otherSales(), 1e-6);                   // the other 50 have no tracked cost
+		assertEquals(50, row(s, "Control Switch").holding());
+	}
+
+	@Test
+	void noCraftWhenAnIngredientWasntBought() {
+		Earnings.Summary s = crafted(List.of(buy(1, "Control Switch", 80, 8_000_000), buy(2, "FTX 3070", 80, 8_000_000),
+				sell(10, "Precursor Apparatus", 80, 80_000_000)));
+		Earnings.Row p = row(s, "Precursor Apparatus");
+		assertEquals(0, p.crafted());
+		assertFalse(p.hasProfit());
+		assertEquals(80, row(s, "Control Switch").holding());
+	}
+
 	@Test
 	void losingTradesShowALoss() {
 		assertEquals(-200, Earnings.summarize(List.of(buy(1, "Gold", 10, 1000), sell(2, "Gold", 10, 800)), 0).profit(), 1e-9);
