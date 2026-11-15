@@ -239,6 +239,8 @@ public final class MoneyReport {
 					: m.contains("bought / week") ? "How many of the lower-level book were insta-bought in the last 7 days (how easy it is to buy two)."
 					: m.contains("sold / week") ? "How many of the higher-level book were insta-sold in the last 7 days (how easy it is to sell)."
 					: m.startsWith("plus ") ? "Extra coins or items the NPC wants on top of the currency."
+					: m.startsWith("NPCs pay for up to") ? "NPCs pay at most 500M coins a day per profile (Hypixel's limit), so this is the most of it you can sell to them a day."
+					: m.startsWith("Buy limit:") ? "NPC shops sell at most 640 of an item a day (Hypixel's limit for most shop items; resets at midnight GMT)."
 					: m.startsWith("buy ") && m.contains(" · sell ") ? "The pet's lowest BIN on the AH now, and the upgraded pet's (before AH fees)."
 					: m.equals("needs materials") ? "Kat wants materials as well as coins; they're in the cost table below."
 					: m.startsWith("Seasonal") || m.startsWith("Mayor") || m.startsWith("Situational")

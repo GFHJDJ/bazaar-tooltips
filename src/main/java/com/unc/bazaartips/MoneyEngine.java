@@ -39,6 +39,8 @@ public final class MoneyEngine {
 	public static final class Row implements Amounts.Sizer {
 		public String key, itemId, name, search, title, flag, req = "";
 		public double profit, pct, perHour, costEach, value, vol, week;
+		/** The most you can do a day because of an NPC limit: items NPCs buy (500M coins a day), or items a shop sells (640 a day). 0 = none. */
+		public long maxDay;
 		/** Currencies: coins per one of the currency, and how many it costs. */
 		public double per;
 		/** How many of the result trade on the Bazaar a week, when that's few enough to be slow to sell (-1 = not slow). */
@@ -174,6 +176,20 @@ public final class MoneyEngine {
 	private Object[] capBuy(BazaarPrices.Price it, double per, boolean order) {
 		return order ? new Object[] {Math.max(1, Math.floor(perHr(it.sellMovingWeek()) / per)), "about an hour of buy orders filling"}
 				: new Object[] {Math.floor(bookDepth(it.sellOffers()) / per), "what's for sale in the order book now"};
+	}
+
+	/** Hypixel's daily NPC limits: most shop items sell you at most 640 a day (reset at midnight GMT), and NPCs pay at most 500M coins a day. */
+	public static final long NPC_BUY_LIMIT = 640;
+	public static final double NPC_SELL_CAP = 500_000_000;
+
+	/** [cap, why] for selling to NPCs at `each` coins: as many as the daily 500M cap covers. */
+	static Object[] capNpcSell(double each) {
+		return new Object[] {Math.floor(NPC_SELL_CAP / each), "the 500M coins a day NPCs will pay you"};
+	}
+
+	/** [cap, why] for buying from an NPC shop `per` items at a time: 640 items a day. */
+	static Object[] capNpcBuy(int per) {
+		return new Object[] {Math.max(1, Math.floor((double) NPC_BUY_LIMIT / Math.max(1, per))), "640 a day from NPC shops"};
 	}
 
 	private Object[] capSell(BazaarPrices.Price it, double per) {
@@ -333,18 +349,20 @@ public final class MoneyEngine {
 			row.flag = "Bazaar -> NPC";
 			row.meta.add(Format.amount(it.itemsInSellOffers()) + " for sale now");
 			row.meta.add(Format.amount(it.buyMovingWeek()) + " insta-bought / week");
+			row.maxDay = (long) Math.floor(NPC_SELL_CAP / npc);
+			row.meta.add("NPCs pay for up to " + Format.count(row.maxDay) + " a day (500M coins)");
 			row.stats.add(new String[] {"Buy for", Format.price(cost)});
 			row.stats.add(new String[] {"NPC pays", Format.price(npc)});
 			row.stats.add(new String[] {"Profit each", Format.signedCoins(profit)});
 			row.stats.add(new String[] {"Return", pctStr(profit / cost * 100)});
 			row.note = (order ? "Place a buy order at about " + Format.price(cost) + " and wait for it to fill"
 					: "Insta-buy at " + Format.price(cost) + " (the price rises as you eat through the cheapest sell offers)")
-					+ ", then sell to any NPC for " + Format.price(npc) + " each. Selling to NPCs has no tax. Hypixel may limit how much "
-					+ "you can sell to NPCs, and these gaps tend to close fast.";
+					+ ", then sell to any NPC for " + Format.price(npc) + " each. Selling to NPCs has no tax, but NPCs pay at most 500M coins "
+					+ "a day per profile, and these gaps tend to close fast.";
 			row.defQty = 64;
 			row.sized = true;
 			int st = SiteData.stackOf(id, false);
-			capMin(row, capBuy(it, 1, order));
+			capMin(row, capBuy(it, 1, order), capNpcSell(npc));
 			row.profitAt = n -> n * npc - bzBuyCost(it, n, order).total();
 			row.costAt = n -> bzBuyCost(it, n, order).total();
 			row.hrsAt = n -> buyHrs(it, n, order);
@@ -358,7 +376,9 @@ public final class MoneyEngine {
 				return new Calc(List.of(
 						new CalcLine("Buy " + Format.count(n) + " on the Bazaar", Format.coins(b.total()), false, b.note()),
 						new CalcLine("Sell " + Format.count(n) + " to an NPC", Format.coins(get), true, Format.price(npc) + " each, no tax"),
-						invLine(ceilDiv(n, st), st)), get - b.total(), "");
+						invLine(ceilDiv(n, st), st)), get - b.total(),
+						get > NPC_SELL_CAP ? "Heads up: NPCs pay at most 500M coins a day per profile, so selling all of these takes "
+								+ (long) Math.ceil(get / NPC_SELL_CAP) + " days." : "");
 			};
 			rows.add(row);
 		}
@@ -414,10 +434,13 @@ public final class MoneyEngine {
 			row.note = "Buy from " + SiteData.npcName(r.npc()) + (where.isEmpty() ? "" : " (" + where + ")") + ", then sell "
 					+ (s.src().equals("AH") ? "on the AH (lowest BIN " + Format.price(s.u()) + ", before AH fees)"
 							: "on the Bazaar for " + Format.price(s.u()) + " each after tax")
-					+ ". Many NPCs limit how many you can buy per day, and some need you to unlock the NPC first.";
+					+ ". NPC shops sell at most 640 of an item a day (resets at midnight GMT), and some NPCs need unlocking first.";
 			int st = SiteData.stackOf(r.id(), !s.src().equals("Bazaar"));
 			row.sized = true;
-			if (bz) capMin(row, capSell(sellIt, r.q()));
+			capMin(row, bz ? capSell(sellIt, r.q()) : null, capNpcBuy(r.q()));
+			row.maxDay = (long) Math.floor((double) NPC_BUY_LIMIT / Math.max(1, r.q())) * r.q();
+			row.meta.add("Buy limit: " + Format.count(NPC_BUY_LIMIT) + " a day (" + Format.count(Math.max(1, NPC_BUY_LIMIT / Math.max(1, r.q())))
+					+ (r.q() > 1 ? " purchases of " + r.q() : " purchases") + ")");
 			row.defQty = r.q() > 1 ? Math.max(1, 64 / r.q()) : 64;
 			row.qtyUnit = r.q() > 1 ? "times (x" + r.q() + " each)" : "items";
 			double costEach = cost.total(), su = s.u();
@@ -456,8 +479,8 @@ public final class MoneyEngine {
 						new CalcLine("Sell " + Format.count(items) + " on the " + (s.src().equals("Bazaar") ? "Bazaar" : "AH"), Format.coins(get), true, note),
 						invLine((long) Math.ceil((double) items / st), st)));
 				return new Calc(lines, get - pay,
-						items > 640 ? "Heads up: many NPCs cap how many you can buy per day (the wiki lists 640 a day for some shops), "
-								+ "so this may take more than one day." : "");
+						items > NPC_BUY_LIMIT ? "Heads up: NPC shops sell at most 640 of an item a day (resets at midnight GMT), so this takes "
+								+ (long) Math.ceil((double) items / NPC_BUY_LIMIT) + " days." : "");
 			};
 			if (bz) markSlow(row, sellIt);
 			rows.add(row);

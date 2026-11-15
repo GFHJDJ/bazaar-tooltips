@@ -209,6 +209,8 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 				cols.add(new Column<>("Profit", "Profit: sells for minus NPC cost, for one purchase.",
 						r -> Format.signedShortCoins(r.profit), r -> Colors.profit(r.profit)));
 				cols.add(new Column<>("Return", "Return: profit as a % of the NPC cost.", r -> MoneyEngine.pctStr(r.pct), r -> Colors.GRAY));
+				cols.add(new Column<>("Max/day", "Max / day: the most items you can buy from NPC shops a day (640 for most items; resets at midnight GMT). "
+						+ "Best amounts never go over it.", r -> Format.count(r.maxDay), r -> Colors.GRAY));
 			}
 			default -> {
 				cols.add(new Column<>("Buy for", "Buy for: what one costs on the Bazaar, the way the Buy button says.",
@@ -220,6 +222,8 @@ public class MoneyScreen extends TableScreen<MoneyEngine.Row> {
 				cols.add(new Column<>("Return", "Return: profit each as a % of the Bazaar price.", r -> MoneyEngine.pctStr(r.pct), r -> Colors.GRAY));
 				cols.add(new Column<>("For sale", "For sale: items listed in sell offers right now (how many you could buy at once).",
 						r -> Format.amount((long) r.vol), r -> Colors.GRAY));
+				cols.add(new Column<>("Max/day", "Max / day: the most of it NPCs will buy from you a day: they pay at most 500M coins a day per "
+						+ "profile. Best amounts never go over it.", r -> Format.amount(r.maxDay), r -> Colors.GRAY));
 			}
 		}
 		if (sized() && !curLike() && !kind().equals("kat")) {

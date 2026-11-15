@@ -72,6 +72,26 @@ class MoneyEngineTest {
 	}
 
 	@Test
+	void npcsPayAtMost500MCoinsADay() {
+		prices.put("RELIC", TestPrices.busy(200_000_000, 190_000_000));
+		npc.put("RELIC", 210_000_000.0);
+		MoneyEngine.Row r = row(engine(false, false, 0, 10_000_000_000.0, 0).npcFromBazaar(prices.keySet()), "RELIC");
+		assertEquals(2, r.maxDay);                                      // 500M / 210M
+		assertEquals(2, r.best.n());                                    // plenty of coins, but NPCs won't pay for a third today
+		assertEquals("cap", r.best.why());
+		assertEquals(500_000_000 / 12, row(engine(false, false, 0, 0, 0).npcFromBazaar(prices.keySet()), "DIAMOND").maxDay);
+	}
+
+	@Test
+	void npcShopsSellAtMost640ADay() {
+		MoneyEngine.Row w = engine(false, false, 0, 1_000_000_000, 0).npcShops().get(0);   // 3 wheat per purchase
+		assertEquals(639, w.maxDay);                                    // 213 purchases of 3
+		assertEquals(213, w.best.n());
+		assertEquals("cap", w.best.why());
+		assertTrue(w.calc(300).footnote().contains("2 days"));          // 900 wheat
+	}
+
+	@Test
 	void aShopThatLosesMoneyIsntListed() {
 		prices.put("WHEAT", TestPrices.busy(2, 1));
 		assertTrue(engine(false, false, 0, 0, 0).npcShops().isEmpty());

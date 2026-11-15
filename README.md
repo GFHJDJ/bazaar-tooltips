@@ -138,6 +138,10 @@ coins left over (up to 3; click one for its details). Bazaar sales only; risky a
   profitable for your coins and slots) and **Max** (as many as they allow), with cost, what you get,
   inventory space and profit.
 
+**Hypixel's NPC limits are built in**: NPCs pay at most 500M coins a day per profile, and NPC shops sell at most 640 of
+an item a day (resets at midnight GMT). Both views have a **Max/day** column, Best amounts (and the Advisor) never go
+over the limit, and the calculator warns when an amount would take more than a day.
+
 ## Forge tab
 
 - Every forge recipe that makes money: cost, profit, profit / hr, forge time, Best. Best is sized by your coins and forge slots only
@@ -329,7 +333,7 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.19.0.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.19.1.jar`.
 
 The build also runs the tests in `src/test` (prices, risk warnings, flips, crafts, NPC and forge math, the advisor,
 best amounts, order tracking, alerts, earnings). If one
@@ -346,7 +350,7 @@ Turn it off with **Auto-update** in the gear; **Updates** shows the status and c
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.19.0.jar`
+- `bazaar-tooltips-0.19.1.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
