@@ -10,7 +10,8 @@ import java.util.Map;
  * Each row has an explanation shown when you hover it. No Minecraft code, so it can be tested on its own.
  */
 public final class CraftReport {
-	public enum Kind { HEADING, LINE, WARNING, NOTE, GAP }
+	/** CHART = one band of a chart several rows tall (indent = which band, from the top); the screen draws it. */
+	public enum Kind { HEADING, LINE, WARNING, NOTE, GAP, CHART }
 
 	/**
 	 * One row. text = the label (left), note = extra detail after it (dark gray), value = the number (right).

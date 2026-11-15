@@ -226,6 +226,17 @@ public final class OrderTracker {
 	private static final Pattern CHAT_FILLED = Pattern.compile("^\\[Bazaar] Your (Buy Order|Sell Offer) for ([\\d,]+)x (.+?) was filled!$");
 	private static final Pattern CHAT_CLAIM_BUY = Pattern.compile("^\\[Bazaar] Claimed ([\\d,]+)x (.+?) worth .+ bought for .+$");
 	private static final Pattern CHAT_CLAIM_SELL = Pattern.compile("^\\[Bazaar] Claimed .+ coins? from selling ([\\d,]+)x (.+?) at .+$");
+	private static final Pattern CHAT_SETUP = Pattern.compile("^\\[Bazaar] (Buy Order|Sell Offer) Setup! ([\\d,]+)x (.+?) for ([\\d,.]+) coins?\\.?$");
+	private static final Pattern CHAT_CANCEL_BUY = Pattern.compile("^\\[Bazaar] Cancelled! Refunded ([\\d,.]+) coins? from cancelling (?:a |your )?Buy Order!?$");
+	private static final Pattern CHAT_CANCEL_SELL = Pattern.compile("^\\[Bazaar] Cancelled! Refunded ([\\d,]+)x (.+?) from cancelling (?:a |your )?Sell Offer!?$");
+
+	private static double coinsIn(String s) {
+		try {
+			return Double.parseDouble(s.replace(",", ""));
+		} catch (NumberFormatException e) {
+			return Double.NaN;
+		}
+	}
 
 	/**
 	 * Reads one chat line. "Your Buy Order for 64x Diamond was filled!" marks that order Filled (so it stops showing
@@ -233,8 +244,77 @@ public final class OrderTracker {
 	 * else, or a message that matches none of your orders, changes nothing. Returns true if the list changed.
 	 */
 	public static synchronized boolean onChat(String message) {
+		return onChat(message, System.currentTimeMillis());
+	}
+
+	/**
+	 * Also: "Buy Order Setup! 64x Diamond for 640 coins." adds the new order (the price each is the total / amount), and
+	 * "Cancelled! Refunded ..." removes the cancelled one: a sell offer by item and amount left, a buy order by the coins
+	 * refunded (what was left of it times its price). When it can't tell which order was cancelled, nothing changes.
+	 */
+	public static synchronized boolean onChat(String message, long now) {
 		String msg = strip(message);
 		if (!msg.startsWith("[Bazaar]")) return false;
+		Matcher m;
+		if ((m = CHAT_SETUP.matcher(msg)).matches()) {
+			long amount = number(m.group(2));
+			double total = coinsIn(m.group(4));
+			if (amount <= 0 || !(total > 0)) return false;
+			String name = m.group(3).trim();
+			List<String> before = keys(orders);
+			orders.add(new Order(m.group(1).equals("Buy Order") ? Type.BUY : Type.SELL, name, productFor(name), amount, 0, false,
+					Math.round(total / amount * 10) / 10.0, 0, now));
+			before.add(null);
+			rekey(before);
+			return true;
+		}
+		if ((m = CHAT_CANCEL_SELL.matcher(msg)).matches()) {
+			long left = number(m.group(1));
+			String want = norm(m.group(2));
+			int pick = -1, byName = -1, named = 0;
+			for (int i = 0; i < orders.size(); i++) {
+				Order o = orders.get(i);
+				if (o.type() != Type.SELL || o.full() || !norm(o.name()).equals(want)) continue;
+				named++;
+				byName = i;
+				if (pick < 0 && o.amount() - o.filled() == left) pick = i;
+			}
+			if (pick < 0 && named == 1) pick = byName;            // it filled a bit since you last opened Manage Orders
+			return removeAt(pick);
+		}
+		if ((m = CHAT_CANCEL_BUY.matcher(msg)).matches()) {
+			double refund = coinsIn(m.group(1));
+			if (!(refund > 0)) return false;
+			int pick = -1, close = 0, fits = -1, fitCount = 0;
+			for (int i = 0; i < orders.size(); i++) {
+				Order o = orders.get(i);
+				if (o.type() != Type.BUY || o.full() || !(o.price() > 0)) continue;
+				double left = (o.amount() - o.filled()) * o.price();
+				if (Math.abs(left - refund) <= Math.max(1, left * 0.001)) {
+					if (close++ == 0) pick = i;
+				}
+				double units = refund / o.price();                    // partly filled since you last looked: a whole number of them left
+				if (refund <= o.amount() * o.price() + 1 && Math.abs(units - Math.round(units)) < 0.01) {
+					fitCount++;
+					fits = i;
+				}
+			}
+			if (close == 0 && fitCount == 1) pick = fits;
+			return removeAt(pick);                                  // identical orders: either one is the same to us
+		}
+		return onChatOld(msg);
+	}
+
+	private static boolean removeAt(int i) {
+		if (i < 0) return false;
+		List<String> before = keys(orders);
+		before.remove(i);
+		orders.remove(i);
+		rekey(before);
+		return true;
+	}
+
+	private static boolean onChatOld(String msg) {
 		Matcher m;
 		if ((m = CHAT_FILLED.matcher(msg)).matches()) {
 			Type type = m.group(1).equals("Buy Order") ? Type.BUY : Type.SELL;

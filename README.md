@@ -36,7 +36,7 @@ Craft it (1 craft makes 9):
 
 Press **B** in game. To change the key, click the gear (⚙) next to Rounded, then the key button (or Options > Controls > Key Binds > Bazaar Tooltips). It opens on the tab you
 used last (or one you pick in the gear). Tabs along the top (they wrap onto two rows; hide the ones you don't use in the gear): **Crafts**, **Flipper**, **Advisor**, **NPC**, **Forge**, **Prices**, **Books**,
-**Minions**, **Profit/hr**, **Essence**, **Currency**, **Kat**, **Bits**, **AH**, **Earnings**, **Orders** (most are ports of your website's tabs:
+**Minions**, **Profit/hr**, **Essence**, **Currency**, **Kat**, **Bits**, **AH**, **Alerts**, **Earnings**, **Orders** (most are ports of your website's tabs:
 same data, same math, checked against the site's own script number for number). Your coins, free slots,
 tax and Rounded setting are shared by every tab.
 
@@ -152,6 +152,17 @@ coins left over (up to 3; click one for its details). Bazaar sales only; risky a
 Every bazaar item: insta-buy and insta-sell price, margin, margin % and weekly volume (sortable, low
 volume can be hidden). Click one for its full stats, manipulation warnings and the live order book.
 
+An item's details also show a **30-day price chart** (one bar a day, the middle of insta-buy and insta-sell, from
+SkyCofl; today in gold), its 30-day typical, low and high, how today compares, and its all-time range. A
+**Set a price alert** line takes you to the Alerts tab with the item filled in.
+
+## Alerts tab (price alerts)
+
+Type an item (part of its name is enough) and a price (29000, 29k, 1.2m), pick **Insta-buy below / above** or
+**Insta-sell below / above**, and click **Add**. Every time prices refresh (about once a minute), an alert whose price
+gets there sends one chat message with a ding and a [/bz] link; it messages again only after the price has gone back
+the other way. Click an alert to delete it. Alerts are saved in `config/bazaartips-alerts.json`.
+
 ## Books tab
 
 Two level-N enchanted books make one level N+1 in an anvil. Lists the combinations that make money (up to
@@ -220,7 +231,9 @@ Three views (the **View** button):
 Open your inventory (E): a **Worth** button sits above its top-left corner. Click it to show a panel beside the
 inventory with what everything you're carrying is worth right now, each item sold the best way: insta-sell on the
 Bazaar (walking the buy orders, after tax), any NPC (green, no tax), or the AH lowest BIN for things not on the Bazaar.
-It also says how much more sell offers would pay and how many items an NPC pays more for. Click **Hide** to close it;
+It also says how much more sell offers would pay and how many items an NPC pays more for.
+**Sacks**: open each of your sacks once (from /sacks) and the panel adds what's in them, remembered between sessions
+and updated whenever you reopen a sack (the Gemstone Sack's rough / flawed / fine counts too). Click **Hide** to close it;
 it stays the way you left it. Sacks, storage and equipped gear aren't counted.
 
 ## Earnings tab (what you actually made)
@@ -258,6 +271,10 @@ your sell offer, you get one chat message (click **[/bz]** in it to open that it
 your orders, the ones that need you first at the top: Outbid / Undercut, Tied (someone has the same price),
 Filled (claim it), Top. Hover one for the price to re-place it at. **Alerts** turns the chat messages on or
 off; **Forget orders** clears the list.
+
+New orders and cancellations also come from chat: "Buy Order Setup!" / "Sell Offer Setup!" adds the order (price each =
+the total / amount), and "Cancelled! Refunded ..." removes it: a sell offer by item and amount, a buy order by the coins
+refunded. If it can't tell which order was cancelled, nothing changes (reopen Manage Orders to be sure).
 
 The mod also reads Hypixel's own bazaar chat lines: "Your Buy Order for 64x Diamond was filled!" marks that order
 Filled straight away (so it isn't called outbid just because it left the order book), and claiming a filled order
@@ -312,7 +329,7 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.18.3.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.19.0.jar`.
 
 The build also runs the tests in `src/test` (prices, risk warnings, flips, crafts, NPC and forge math, the advisor,
 best amounts, order tracking, alerts, earnings). If one
@@ -329,7 +346,7 @@ Turn it off with **Auto-update** in the gear; **Updates** shows the status and c
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.18.3.jar`
+- `bazaar-tooltips-0.19.0.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
@@ -357,6 +374,7 @@ Open the folder in IntelliJ IDEA, let it import, then run the Gradle task `runCl
 - `Overlays.java` + `ProductSummary.java` - the panel in the bazaar and the orders box on your screen.
 - `SettingsScreen.java` + `TabsPickScreen.java` - the gear's settings. `FlipAlerts.java` - flip chat alerts.
 - `Advisor.java` + `AdvisorScreen.java`, `AdvisorDetailScreen.java`, `AdvisorExcludeScreen.java` - the Coin advisor.
+- `PriceAlerts.java` + `AlertsScreen.java` - price alerts. `SackStore.java` - what's in your sacks.
 - `Updater.java` - the auto-updater. `Settings.java` - your saved settings. `UnlockLookup.java` - My unlocks.
 - `FlipsScreen.java`, `FlipDetailScreen.java`, `SortScreen.java`, `FiltersScreen.java`, `BaseScreen.java`,
   `TableScreen.java`, `FlipperScreen.java`, `MoneyScreen.java`, `ReportScreen.java`, `FlipperDetailScreen.java`,

@@ -34,7 +34,14 @@ public final class CoflData {
 	private static final long HIST_TTL = 6 * 3600 * 1000L, ERR_TTL = 10 * 60 * 1000L;
 
 	/** Summary of an item's price history: all-time high/low, since when, and the last 30 days' median/high/low. */
-	public record Hist(long at, String status, double allHi, double allLo, long since, double med30, double hi30, double lo30) {}
+	public record Hist(long at, String status, double allHi, double allLo, long since, double med30, double hi30, double lo30, double[] days) {
+		public Hist(long at, String status, double allHi, double allLo, long since, double med30, double hi30, double lo30) {
+			this(at, status, allHi, allLo, since, med30, hi30, lo30, new double[0]);
+		}
+	}
+
+	/** Days kept for the chart (one middle price a day, oldest first). */
+	static final int CHART_DAYS = 30;
 
 	/** % change in the last 24h: b = insta-buy price, s = buy-order price (NaN when unknown). */
 	public record Move(double b, double s) {}
@@ -114,8 +121,14 @@ public final class CoflData {
 			JsonObject o = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
 			for (var e : o.entrySet()) {
 				JsonObject h = e.getValue().getAsJsonObject();
+				double[] days = new double[0];
+				if (h.has("days")) {
+					JsonArray a = h.getAsJsonArray("days");
+					days = new double[a.size()];
+					for (int i = 0; i < a.size(); i++) days[i] = a.get(i).isJsonNull() ? Double.NaN : a.get(i).getAsDouble();
+				}
 				hist.put(e.getKey(), new Hist(h.get("at").getAsLong(), h.get("status").getAsString(), d(h, "allHi"), d(h, "allLo"),
-						h.has("since") ? h.get("since").getAsLong() : 0, d(h, "med30"), d(h, "hi30"), d(h, "lo30")));
+						h.has("since") ? h.get("since").getAsLong() : 0, d(h, "med30"), d(h, "hi30"), d(h, "lo30"), days));
 			}
 		} catch (Exception e) {
 			System.getLogger("bazaartips").log(System.Logger.Level.WARNING, "Couldn't read saved price history: " + e);
@@ -142,6 +155,12 @@ public final class CoflData {
 					j.addProperty("med30", h.med30());
 					j.addProperty("hi30", h.hi30());
 					j.addProperty("lo30", h.lo30());
+					JsonArray a = new JsonArray();
+					for (double v : h.days()) {
+						if (Double.isNaN(v)) a.add(com.google.gson.JsonNull.INSTANCE);
+						else a.add(v);
+					}
+					j.add("days", a);
 				}
 				o.add(e.getKey(), j);
 			}
@@ -154,6 +173,7 @@ public final class CoflData {
 
 	static boolean fresh(String id) {
 		Hist h = hist.get(id);
+		if (h != null && h.status().equals("ok") && h.days().length == 0) return false;   // saved before the chart existed: fetch again
 		return h != null && System.currentTimeMillis() - h.at() < (h.status().equals("err") ? ERR_TTL : HIST_TTL);
 	}
 
@@ -262,7 +282,20 @@ public final class CoflData {
 		List<Double> recent = new ArrayList<>();
 		for (Pt p : pts) if (p.t() >= cut) recent.add(p.mid());
 		List<Double> r = recent.size() >= 3 ? recent : mids.subList(Math.max(0, mids.size() - 30), mids.size());
-		return new Hist(now, "ok", Collections.max(mids), Collections.min(mids), pts.get(0).t(), median(r), Collections.max(r), Collections.min(r));
+		// the chart: one middle price per day for the last 30 days (the average of that day's points; NaN = no data)
+		long dayMs = 86_400_000L, today = Math.floorDiv(now, dayMs);
+		double[] sum = new double[CHART_DAYS];
+		int[] n = new int[CHART_DAYS];
+		for (Pt p : pts) {
+			long ago = today - Math.floorDiv(p.t(), dayMs);
+			if (ago < 0 || ago >= CHART_DAYS) continue;
+			int i = (int) (CHART_DAYS - 1 - ago);
+			sum[i] += p.mid();
+			n[i]++;
+		}
+		double[] days = new double[CHART_DAYS];
+		for (int i = 0; i < CHART_DAYS; i++) days[i] = n[i] > 0 ? sum[i] / n[i] : Double.NaN;
+		return new Hist(now, "ok", Collections.max(mids), Collections.min(mids), pts.get(0).t(), median(r), Collections.max(r), Collections.min(r), days);
 	}
 
 	private static double num(JsonObject p, String a, String b) {

@@ -250,8 +250,50 @@ abstract class ReportScreen extends BaseScreen {
 		drawExplainStrip(graphics, mouseX, mouseY, explainY, explainLines, hint);
 	}
 
+	/** How many rows a chart takes. */
+	static final int CHART_ROWS = 7;
+
+	/** The chart's values, oldest first (NaN = no data that day), or null for no chart. */
+	protected double[] chartData() {
+		return null;
+	}
+
+	/** What hovering the chart explains. */
+	protected String chartExplain() {
+		return "";
+	}
+
+	/**
+	 * One band of the chart (band 0 = the top): a bar per value, as tall as the value between the lowest and highest
+	 * (with a little room under the lowest so it still shows). Each band draws only its own slice, so scrolling works.
+	 */
+	private void drawChartBand(GuiGraphicsExtractor g, int band, int y) {
+		double[] v = chartData();
+		if (v == null || v.length == 0) return;
+		double lo = Double.POSITIVE_INFINITY, hi = Double.NEGATIVE_INFINITY;
+		for (double d : v) if (!Double.isNaN(d)) { lo = Math.min(lo, d); hi = Math.max(hi, d); }
+		if (lo == Double.POSITIVE_INFINITY) return;
+		int top = y - band * rowHeight, h = CHART_ROWS * rowHeight - 2, bottom = top + h;
+		double floor = lo - (hi - lo) * 0.15, span = Math.max(hi - floor, 1e-9);
+		int x0 = left + 6, w = tableWidth - 12, n = v.length;
+		int sliceTop = y - 1, sliceBottom = y - 1 + rowHeight;
+		if (band == 0) explain.add(left, top - 1, left + tableWidth, bottom, chartExplain());
+		for (int i = 0; i < n; i++) {
+			if (Double.isNaN(v[i])) continue;
+			int bx1 = x0 + i * w / n + 1, bx2 = x0 + (i + 1) * w / n - 1;
+			int barTop = bottom - (int) Math.round((v[i] - floor) / span * h);
+			int a = Math.max(barTop, sliceTop), b = Math.min(bottom, sliceBottom);
+			if (a < b) g.fill(bx1, a, Math.max(bx1 + 1, bx2), b, i == n - 1 ? Colors.GOLD : Colors.AQUA);
+		}
+		if (band == CHART_ROWS - 1) g.fill(x0, Math.min(bottom, sliceBottom - 1), x0 + w, Math.min(bottom, sliceBottom - 1) + 1, Colors.DIVIDER);
+	}
+
 	private void drawRow(GuiGraphicsExtractor graphics, Row r, int y, boolean hovered) {
 		if (r.kind() == Kind.GAP) return;
+		if (r.kind() == Kind.CHART) {
+			drawChartBand(graphics, r.indent(), y);
+			return;
+		}
 		if (!r.action().isEmpty()) {
 			// clickable: a faint band, brighter under the mouse, and the value in a box like a button
 			graphics.fill(left, y - 1, left + tableWidth, y - 1 + rowHeight, hovered ? Colors.ROW_HOVER : Colors.ROW_STRIPE);

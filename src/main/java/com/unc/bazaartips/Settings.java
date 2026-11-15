@@ -200,7 +200,7 @@ public final class Settings {
 			if (o.has("rounded")) Format.setRounded(o.get("rounded").getAsBoolean());
 			if (o.has("lookupName")) lookupName = o.get("lookupName").getAsString();
 			if (o.has("lookupProfile")) lookupProfile = o.get("lookupProfile").getAsString();
-			tab = str(o, "tab", tab, "crafts", "flips", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur", "orders", "plan", "earned", "kat", "bits", "ah");
+			tab = str(o, "tab", tab, "crafts", "flips", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur", "orders", "plan", "earned", "kat", "bits", "ah", "alerts");
 			for (String k : new String[] {"pricesSort", "bookSort", "minionSort", "profitSort", "essenceSort", "curSort", "profitSell", "profitFuel",
 					"profitUp1", "profitUp2", "profitHopper", "profitChest", "essenceType", "curType", "planSort", "planSrc", "earnPeriod", "earnSort", "katSort", "bitsSort", "ahView", "ahSort"}) {
 				if (o.has(k)) Settings.class.getField(k).set(null, o.get(k).getAsString());
@@ -226,7 +226,7 @@ public final class Settings {
 			if (o.has("npcSort")) npcSort = o.get("npcSort").getAsString();
 			if (o.has("npcShopSort")) npcShopSort = o.get("npcShopSort").getAsString();
 			if (o.has("hideRisky")) hideRisky = o.get("hideRisky").getAsBoolean();
-			startTab = str(o, "startTab", startTab, "last", "crafts", "flips", "plan", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur", "orders", "earned", "kat", "bits", "ah");
+			startTab = str(o, "startTab", startTab, "last", "crafts", "flips", "plan", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur", "orders", "earned", "kat", "bits", "ah", "alerts");
 			if (o.has("hiddenTabs")) { hiddenTabs.clear(); o.getAsJsonArray("hiddenTabs").forEach(e -> hiddenTabs.add(e.getAsString())); }
 			if (o.has("tooltips")) tooltips = o.get("tooltips").getAsBoolean();
 			if (o.has("tooltipCrafts")) tooltipCrafts = o.get("tooltipCrafts").getAsBoolean();

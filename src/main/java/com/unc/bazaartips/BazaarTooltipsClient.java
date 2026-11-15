@@ -33,6 +33,8 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		SiteData.load();
 		CoflData.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-history.json"));
 		OrderTracker.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-orders.json"));
+		PriceAlerts.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-alerts.json"));
+		SackStore.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-sacks.json"));
 		Earnings.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-earnings.jsonl"));
 		Overlays.register();
 		InventoryPanel.register();
@@ -48,7 +50,7 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
 			if (overlay) return;
 			String text = message.getString();
-			OrderTracker.onChat(text);
+			OrderTracker.onChat(text, System.currentTimeMillis());
 			Earnings.onChat(text, System.currentTimeMillis());       // the Earnings tab: what you bought and sold
 		});
 
@@ -60,7 +62,9 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			announceUpdate(client);
 			readOrders(client);
+			readSacks(client);
 			alertOrders(client);
+			alertPrices(client);
 			alertFlips(client);
 			while (openFlips.consumeClick()) {
 				if (client.player != null) client.gui.setScreen(BaseScreen.screenFor(Settings.startTab.equals("last") ? Settings.tab : Settings.startTab));
@@ -148,6 +152,55 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 							.withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand(bz))
 							.withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.literal("Open the bazaar for " + c.order().name()))))));
 		}
+	}
+
+	// ---- price alerts ----
+
+	private static long lastPriceCheck = -1;
+
+	/** After each price refresh: one chat line (and a ding) per price alert that has just crossed its price. */
+	private static void alertPrices(net.minecraft.client.Minecraft client) {
+		long t = BazaarPrices.lastFetchMillis();
+		if (t == lastPriceCheck || t == 0 || client.player == null) return;
+		lastPriceCheck = t;
+		List<PriceAlerts.Hit> hits = PriceAlerts.check(BazaarPrices::get);
+		for (PriceAlerts.Hit h : hits) {
+			String[] text = PriceAlerts.text(h);
+			String bz = "/bz " + Recipes.name(h.alert().id());
+			client.player.sendSystemMessage(Component.literal("[Bazaar Tooltips] ").withStyle(ChatFormatting.GOLD)
+					.append(Component.literal(text[0]).withStyle(ChatFormatting.AQUA))
+					.append(Component.literal(text[1]).withStyle(ChatFormatting.GRAY))
+					.append(Component.literal(" [/bz]").withStyle(ChatFormatting.AQUA).withStyle(s -> s
+							.withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand(bz))
+							.withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.literal("Open the bazaar for " + SiteData.prettyName(h.alert().id())))))));
+		}
+		if (!hits.isEmpty()) {
+			client.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.NOTE_BLOCK_PLING, 1.0f));
+		}
+	}
+
+	// ---- sacks: read whenever a sack's screen is open, for the Worth panel ----
+
+	private static int sackTicks = 0;
+
+	private static void readSacks(net.minecraft.client.Minecraft client) {
+		net.minecraft.client.gui.screens.Screen screen = client.gui.screen();
+		if (!(screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> c) || !SackStore.isSackTitle(c.getTitle().getString())) {
+			sackTicks = 0;
+			return;
+		}
+		if (++sackTicks % 10 != 0) return;                       // twice a second is plenty
+		List<SackStore.Entry> found = new java.util.ArrayList<>();
+		for (net.minecraft.world.inventory.Slot slot : c.getMenu().slots) {
+			if (slot.container instanceof net.minecraft.world.entity.player.Inventory) continue;   // your own inventory, under the sack
+			ItemStack stack = slot.getItem();
+			if (stack.isEmpty()) continue;
+			List<String> lines = new java.util.ArrayList<>();
+			net.minecraft.world.item.component.ItemLore lore = stack.get(DataComponents.LORE);
+			if (lore != null) for (Component l : lore.lines()) lines.add(l.getString());
+			found.addAll(SackStore.parse(stack.getHoverName().getString(), lines));
+		}
+		if (!found.isEmpty()) SackStore.update(OrderTracker.strip(c.getTitle().getString()), found, System.currentTimeMillis());
 	}
 
 	// ---- flip alerts ----

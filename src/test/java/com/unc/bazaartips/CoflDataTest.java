@@ -38,6 +38,10 @@ class CoflDataTest {
 		assertEquals(50, h.hi30());
 		assertEquals(20, h.lo30());
 		assertEquals(CoflData.parseTime("2025-01-01T00:00:00Z"), h.since());
+		assertEquals(CoflData.CHART_DAYS, h.days().length);
+		assertEquals(50, h.days()[CoflData.CHART_DAYS - 7], 1e-9);       // 2026-06-04 is 6 days before the 10th
+		assertEquals(20, h.days()[CoflData.CHART_DAYS - 10], 1e-9);
+		assertTrue(Double.isNaN(h.days()[CoflData.CHART_DAYS - 1]));    // nothing today
 	}
 
 	@Test

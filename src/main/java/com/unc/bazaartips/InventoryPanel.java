@@ -120,13 +120,29 @@ final class InventoryPanel {
 	/** The panel's lines, rebuilt only when the inventory, prices or settings change. */
 	static List<ProductSummary.Line> lines() {
 		String st = signature() + "|" + BazaarPrices.lastFetchMillis() + "|" + NpcPrices.version() + "|" + AhPrices.version() + "|" + Settings.tax()
-				+ "|" + Format.rounded();
+				+ "|" + Format.rounded() + "|" + SackStore.version() + "|" + System.currentTimeMillis() / 60_000;
 		if (st.equals(stamp)) return lines;
 		AhPrices.ensure();
 		List<InventoryValue.Row> rows = InventoryValue.rows(read(), BazaarPrices::get, NpcPrices::get, AhPrices::get, Settings.tax());
 		InventoryValue.Totals t = InventoryValue.totals(rows);
+		// your sacks, as last read off their screens
+		List<InventoryValue.Stack> sackStacks = new ArrayList<>();
+		for (SackStore.Entry e : SackStore.all()) {
+			String id = OrderTracker.productFor(e.name());
+			sackStacks.add(new InventoryValue.Stack(id != null ? id : e.name(), id, e.name(), (int) Math.min(Integer.MAX_VALUE, e.count())));
+		}
+		List<InventoryValue.Row> sackRows = InventoryValue.rows(sackStacks, BazaarPrices::get, NpcPrices::get, AhPrices::get, Settings.tax());
+		InventoryValue.Totals st2 = InventoryValue.totals(sackRows);
 		List<ProductSummary.Line> out = new ArrayList<>();
-		out.add(new ProductSummary.Line("Worth now", Colors.GOLD, Format.shortCoins(t.now()), Colors.YELLOW, false));
+		if (SackStore.sackCount() > 0) {
+			out.add(new ProductSummary.Line("Worth now (with sacks)", Colors.GOLD, Format.shortCoins(t.now() + st2.now()), Colors.YELLOW, false));
+			out.add(ProductSummary.Line.kv("Inventory", Format.shortCoins(t.now()), Colors.YELLOW));
+			out.add(ProductSummary.Line.kv("Sacks (" + SackStore.sackCount() + " read " + Format.age(System.currentTimeMillis() - SackStore.updatedAt()) + " ago)",
+					Format.shortCoins(st2.now()), Colors.YELLOW));
+		} else {
+			out.add(new ProductSummary.Line("Worth now", Colors.GOLD, Format.shortCoins(t.now()), Colors.YELLOW, false));
+			out.add(ProductSummary.Line.note("Open your sacks once to add them", Colors.DARK_GRAY));
+		}
 		if (t.withOffers() - t.now() >= 1000) {                // not worth a line for a few hundred coins
 			out.add(ProductSummary.Line.kv("With sell offers", Format.signedShortCoins(t.withOffers() - t.now()) + " more", Colors.AQUA));
 		}

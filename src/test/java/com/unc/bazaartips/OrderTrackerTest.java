@@ -132,6 +132,42 @@ class OrderTrackerTest {
 	}
 
 	@Test
+	void aNewOrderFromChatIsAdded() {
+		assertTrue(OrderTracker.onChat("§6[Bazaar] §r§7Buy Order Setup! §r§a64§r§7x §r§fDiamond §r§7for §r§683,206.4 coins§r§7.", 5));
+		assertTrue(OrderTracker.onChat("[Bazaar] Sell Offer Setup! 640x Coal for 3,200 coins.", 6));
+		List<OrderTracker.Order> o = OrderTracker.orders();
+		assertEquals(2, o.size());
+		assertEquals(OrderTracker.Type.BUY, o.get(0).type());
+		assertEquals("Diamond", o.get(0).name());
+		assertEquals(64, o.get(0).amount());
+		assertEquals(1300.1, o.get(0).price(), 1e-9);                   // 83,206.4 / 64
+		assertEquals(5.0, o.get(1).price(), 1e-9);
+		assertFalse(o.get(0).full());
+	}
+
+	@Test
+	void aCancelledSellOfferIsRemovedByItemAndAmount() {
+		OrderTracker.replace(List.of(sell("Coal", "COAL", 640, 5), sell("Diamond", "DIAMOND", 64, 10)));
+		assertFalse(OrderTracker.onChat("[Bazaar] Cancelled! Refunded 64x Emerald from cancelling Sell Offer!"));
+		assertTrue(OrderTracker.onChat("[Bazaar] Cancelled! Refunded 640x Coal from cancelling Sell Offer!"));
+		assertEquals(List.of("Diamond"), OrderTracker.orders().stream().map(OrderTracker.Order::name).toList());
+		assertTrue(OrderTracker.onChat("[Bazaar] Cancelled! Refunded 60x Diamond from cancelling Sell Offer!"));   // 4 sold meanwhile
+		assertTrue(OrderTracker.orders().isEmpty());
+	}
+
+	@Test
+	void aCancelledBuyOrderIsFoundByTheCoinsRefunded() {
+		OrderTracker.replace(List.of(buy("Diamond", "DIAMOND", 64, 10), buy("Coal", "COAL", 640, 3.5)));
+		assertTrue(OrderTracker.onChat("[Bazaar] Cancelled! Refunded 2,240 coins from cancelling Buy Order!"));   // 640 x 3.5
+		assertEquals(List.of("Diamond"), OrderTracker.orders().stream().map(OrderTracker.Order::name).toList());
+		assertTrue(OrderTracker.onChat("[Bazaar] Cancelled! Refunded 600 coins from cancelling Buy Order!"));     // 60 left of 64 at 10
+		assertTrue(OrderTracker.orders().isEmpty());
+		OrderTracker.replace(List.of(buy("Diamond", "DIAMOND", 64, 10), buy("Iron", "IRON_INGOT", 64, 5)));
+		assertFalse(OrderTracker.onChat("[Bazaar] Cancelled! Refunded 320 coins from cancelling Buy Order!".replace("320", "123.7")));   // fits neither
+		assertEquals(2, OrderTracker.orders().size());
+	}
+
+	@Test
 	void otherChatChangesNothing() {
 		OrderTracker.replace(List.of(buy("Diamond", "DIAMOND", 64, 10)));
 		long v = OrderTracker.version();
