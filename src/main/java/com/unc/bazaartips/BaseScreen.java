@@ -47,6 +47,7 @@ abstract class BaseScreen extends Screen {
 			{"cur", "Currency", "Currencies: what to buy with copper, medals, pelts, North Stars and more, ranked by coins per one."},
 			{"kat", "Kat", "Kat: buy a pet on the AH, have Kat upgrade its rarity, sell it on the AH."},
 			{"bits", "Bits", "Bits: what to buy with bits at Elizabeth, ranked by coins per bit."},
+			{"shards", "Shards", "Shards: fuse two shards into another and sell it on the Bazaar: the cheapest way to make each one, and the profit."},
 			{"ah", "AH", "Auction house: items listed below their Bazaar price, crafts using AH-only ingredients, and any item's lowest BIN."},
 			{"alerts", "Alerts", "Price alerts: a chat message when an item's price drops below (or rises above) a number you pick."},
 			{"earned", "Earnings", "Earnings: the coins you actually made. Every bazaar buy and sell Hypixel reports in chat is written down, with profit per item."},
@@ -86,6 +87,7 @@ abstract class BaseScreen extends Screen {
 			case "kat" -> new MoneyScreen("kat");
 			case "bits" -> new MoneyScreen("bits");
 			case "ah" -> new AhScreen();
+			case "shards" -> new ShardsScreen();
 			default -> new FlipsScreen();
 		};
 	}

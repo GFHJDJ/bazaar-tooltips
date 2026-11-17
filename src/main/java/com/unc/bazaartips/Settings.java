@@ -120,6 +120,9 @@ public final class Settings {
 	public static String earnPeriod = "session", earnSort = "profit";
 	/** Kat, Bits and AH tabs: their sorts, and the AH tab's view ("arb", "craft" or "lookup"). */
 	public static String katSort = "profit", bitsSort = "per", ahView = "arb", ahSort = "profit";
+	/** Shards tab: its sort, and whether fusions that lose coins are hidden. */
+	public static String shardSort = "profit";
+	public static boolean shardProfitOnly = true;
 	/** The session profit box on your screen and where it sits; the Worth panel beside your inventory (closed until you click Worth). */
 	public static String earnHudCorner = "top-right";
 	public static boolean earnHud = true, invPanel = false;
@@ -200,9 +203,9 @@ public final class Settings {
 			if (o.has("rounded")) Format.setRounded(o.get("rounded").getAsBoolean());
 			if (o.has("lookupName")) lookupName = o.get("lookupName").getAsString();
 			if (o.has("lookupProfile")) lookupProfile = o.get("lookupProfile").getAsString();
-			tab = str(o, "tab", tab, "crafts", "flips", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur", "orders", "plan", "earned", "kat", "bits", "ah", "alerts");
+			tab = str(o, "tab", tab, "crafts", "flips", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur", "orders", "plan", "earned", "kat", "bits", "ah", "alerts", "shards");
 			for (String k : new String[] {"pricesSort", "bookSort", "minionSort", "profitSort", "essenceSort", "curSort", "profitSell", "profitFuel",
-					"profitUp1", "profitUp2", "profitHopper", "profitChest", "essenceType", "curType", "planSort", "planSrc", "earnPeriod", "earnSort", "katSort", "bitsSort", "ahView", "ahSort"}) {
+					"profitUp1", "profitUp2", "profitHopper", "profitChest", "essenceType", "curType", "planSort", "planSrc", "earnPeriod", "earnSort", "katSort", "bitsSort", "ahView", "ahSort", "shardSort"}) {
 				if (o.has(k)) Settings.class.getField(k).set(null, o.get(k).getAsString());
 			}
 			if (o.has("orderAlerts")) orderAlerts = o.get("orderAlerts").getAsBoolean();
@@ -211,6 +214,7 @@ public final class Settings {
 			if (o.has("earnHud")) earnHud = o.get("earnHud").getAsBoolean();
 			if (o.has("invPanel")) invPanel = o.get("invPanel").getAsBoolean();
 			if (o.has("autoUpdate")) autoUpdate = o.get("autoUpdate").getAsBoolean();
+			if (o.has("shardProfitOnly")) shardProfitOnly = o.get("shardProfitOnly").getAsBoolean();
 			earnHudCorner = str(o, "earnHudCorner", earnHudCorner, "top-left", "top-right", "middle-left");
 			orderHudCorner = str(o, "orderHudCorner", orderHudCorner, "top-left", "top-right", "middle-left");
 			if (o.has("profitTier")) profitTier = Math.max(1, Math.min(12, o.get("profitTier").getAsInt()));
@@ -226,7 +230,7 @@ public final class Settings {
 			if (o.has("npcSort")) npcSort = o.get("npcSort").getAsString();
 			if (o.has("npcShopSort")) npcShopSort = o.get("npcShopSort").getAsString();
 			if (o.has("hideRisky")) hideRisky = o.get("hideRisky").getAsBoolean();
-			startTab = str(o, "startTab", startTab, "last", "crafts", "flips", "plan", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur", "orders", "earned", "kat", "bits", "ah", "alerts");
+			startTab = str(o, "startTab", startTab, "last", "crafts", "flips", "plan", "npc", "forge", "prices", "books", "minions", "profit", "essence", "cur", "orders", "earned", "kat", "bits", "ah", "alerts", "shards");
 			if (o.has("hiddenTabs")) { hiddenTabs.clear(); o.getAsJsonArray("hiddenTabs").forEach(e -> hiddenTabs.add(e.getAsString())); }
 			if (o.has("tooltips")) tooltips = o.get("tooltips").getAsBoolean();
 			if (o.has("tooltipCrafts")) tooltipCrafts = o.get("tooltipCrafts").getAsBoolean();
@@ -288,7 +292,7 @@ public final class Settings {
 			o.addProperty("npcView", npcView);
 			o.addProperty("forgeHotm", forgeHotm);
 			for (String k : new String[] {"pricesSort", "bookSort", "minionSort", "profitSort", "essenceSort", "curSort", "profitSell", "profitFuel",
-					"profitUp1", "profitUp2", "profitHopper", "profitChest", "essenceType", "curType", "planSort", "planSrc", "earnPeriod", "earnSort", "katSort", "bitsSort", "ahView", "ahSort"}) {
+					"profitUp1", "profitUp2", "profitHopper", "profitChest", "essenceType", "curType", "planSort", "planSrc", "earnPeriod", "earnSort", "katSort", "bitsSort", "ahView", "ahSort", "shardSort"}) {
 				o.addProperty(k, (String) Settings.class.getField(k).get(null));
 			}
 			o.addProperty("orderAlerts", orderAlerts);
@@ -297,6 +301,7 @@ public final class Settings {
 			o.addProperty("earnHud", earnHud);
 			o.addProperty("invPanel", invPanel);
 			o.addProperty("autoUpdate", autoUpdate);
+			o.addProperty("shardProfitOnly", shardProfitOnly);
 			o.addProperty("earnHudCorner", earnHudCorner);
 			o.addProperty("orderHudCorner", orderHudCorner);
 			o.addProperty("profitTier", profitTier);

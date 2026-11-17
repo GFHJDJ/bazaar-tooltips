@@ -36,7 +36,7 @@ Craft it (1 craft makes 9):
 
 Press **B** in game. To change the key, click the gear (⚙) next to Rounded, then the key button (or Options > Controls > Key Binds > Bazaar Tooltips). It opens on the tab you
 used last (or one you pick in the gear). Tabs along the top (they wrap onto two rows; hide the ones you don't use in the gear): **Crafts**, **Flipper**, **Advisor**, **NPC**, **Forge**, **Prices**, **Books**,
-**Minions**, **Profit/hr**, **Essence**, **Currency**, **Kat**, **Bits**, **AH**, **Alerts**, **Earnings**, **Orders** (most are ports of your website's tabs:
+**Minions**, **Profit/hr**, **Essence**, **Currency**, **Kat**, **Bits**, **Shards**, **AH**, **Alerts**, **Earnings**, **Orders** (most are ports of your website's tabs:
 same data, same math, checked against the site's own script number for number). Your coins, free slots,
 tax and Rounded setting are shared by every tab.
 
@@ -217,6 +217,17 @@ What to buy with bits at Elizabeth, ranked by coins per bit (what it sells for, 
 bits price). Same buttons as the Currency tab: Buy, Sell, Bazaar only (hides things that only sell on the AH), Sort,
 Tax. The bottom line shows what a Booster Cookie costs and what that makes each of its 4,800 bits cost you.
 
+## Shards tab
+
+Fuse two shards into another and sell it on the Bazaar. For every shard you can fuse, the cheapest pair to make it
+right now (each fusion uses 5 of most shards, 2 of Reptile, Amphibian and Elemental ones, 1 of Chameleon; some make
+2), what the inputs cost, what the result sells for after tax, the profit, return and weekly volume. Names are
+coloured by rarity and read "Result <- 5x A + 5x B"; hover for the prices and the next cheapest pairs, click for the
+result's Bazaar prices, chart and alerts. **Buy**, **Sell**, **Risky**, **Profitable** (hide fusions that lose
+coins) and **Tax** buttons. A fusion can give up to 3 results: pick the one shown in the Fusion Machine.
+Recipes are from [SkyShards](https://github.com/Campionnn/SkyShards) by Campion (MIT licence, included in the jar);
+`tools/import_shards.py` updates them.
+
 ## AH tab
 
 Three views (the **View** button):
@@ -333,7 +344,7 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.19.1.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.20.0.jar`.
 
 The build also runs the tests in `src/test` (prices, risk warnings, flips, crafts, NPC and forge math, the advisor,
 best amounts, order tracking, alerts, earnings). If one
@@ -350,7 +361,7 @@ Turn it off with **Auto-update** in the gear; **Updates** shows the status and c
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.19.1.jar`
+- `bazaar-tooltips-0.20.0.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)
@@ -378,6 +389,7 @@ Open the folder in IntelliJ IDEA, let it import, then run the Gradle task `runCl
 - `Overlays.java` + `ProductSummary.java` - the panel in the bazaar and the orders box on your screen.
 - `SettingsScreen.java` + `TabsPickScreen.java` - the gear's settings. `FlipAlerts.java` - flip chat alerts.
 - `Advisor.java` + `AdvisorScreen.java`, `AdvisorDetailScreen.java`, `AdvisorExcludeScreen.java` - the Coin advisor.
+- `ShardEngine.java` + `ShardsScreen.java` + `resources/bazaartips/shards.json` - the Shards tab.
 - `PriceAlerts.java` + `AlertsScreen.java` - price alerts. `SackStore.java` - what's in your sacks.
 - `Updater.java` - the auto-updater. `Settings.java` - your saved settings. `UnlockLookup.java` - My unlocks.
 - `FlipsScreen.java`, `FlipDetailScreen.java`, `SortScreen.java`, `FiltersScreen.java`, `BaseScreen.java`,

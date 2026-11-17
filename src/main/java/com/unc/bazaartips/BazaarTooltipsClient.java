@@ -31,6 +31,7 @@ public class BazaarTooltipsClient implements ClientModInitializer {
 		Settings.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips.json"));
 		Recipes.load();
 		SiteData.load();
+		ShardEngine.load();
 		CoflData.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-history.json"));
 		OrderTracker.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-orders.json"));
 		PriceAlerts.load(FabricLoader.getInstance().getConfigDir().resolve("bazaartips-alerts.json"));
