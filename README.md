@@ -243,8 +243,8 @@ Three views (the **View** button):
 
 ## Worth button in your inventory
 
-Open your inventory (E): a **Worth** button sits above its top-left corner. Click it to show a panel beside the
-inventory with what everything you're carrying is worth right now, each item sold the best way: insta-sell on the
+Open your inventory (E): a **Worth** button sits beside its top-left corner. Click it to show a panel under it, on
+the left of the inventory (switch it to the right with **Worth panel side** in the gear if another mod uses the left) with what everything you're carrying is worth right now, each item sold the best way: insta-sell on the
 Bazaar (walking the buy orders, after tax), any NPC (green, no tax), or the AH lowest BIN for things not on the Bazaar.
 It also says how much more sell offers would pay and how many items an NPC pays more for.
 **Sacks**: open each of your sacks once (from /sacks) and the panel adds what's in them, remembered between sessions
@@ -344,7 +344,7 @@ SkyCofl (Flipper price history, Essence listing checks). The only commands it ev
    .\gradlew.bat build
    ```
    The first build downloads Gradle, Minecraft and Fabric, so it takes a few minutes.
-4. The mod is at `build\libs\bazaar-tooltips-0.20.0.jar`.
+4. The mod is at `build\libs\bazaar-tooltips-0.20.1.jar`.
 
 The build also runs the tests in `src/test` (prices, risk warnings, flips, crafts, NPC and forge math, the advisor,
 best amounts, order tracking, alerts, earnings). If one
@@ -361,7 +361,7 @@ Turn it off with **Auto-update** in the gear; **Updates** shows the status and c
 ## Install it
 
 Put these in your Minecraft 26.2 Fabric `mods` folder:
-- `bazaar-tooltips-0.20.0.jar`
+- `bazaar-tooltips-0.20.1.jar`
 - Fabric API for 26.2 (from Modrinth or CurseForge)
 
 ## Test it from IntelliJ (optional)

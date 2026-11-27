@@ -126,6 +126,8 @@ public final class Settings {
 	/** The session profit box on your screen and where it sits; the Worth panel beside your inventory (closed until you click Worth). */
 	public static String earnHudCorner = "top-right";
 	public static boolean earnHud = true, invPanel = false;
+	/** The Worth button and panel go on the left of your inventory (true) or the right. */
+	public static boolean invPanelLeft = true;
 	/** Download new versions from GitHub and install them when the game closes. */
 	public static boolean autoUpdate = true;
 	public static java.util.LinkedHashSet<String> planExSrc = new java.util.LinkedHashSet<>(), planEx = new java.util.LinkedHashSet<>();
@@ -213,6 +215,7 @@ public final class Settings {
 			if (o.has("orderHud")) orderHud = o.get("orderHud").getAsBoolean();
 			if (o.has("earnHud")) earnHud = o.get("earnHud").getAsBoolean();
 			if (o.has("invPanel")) invPanel = o.get("invPanel").getAsBoolean();
+			if (o.has("invPanelLeft")) invPanelLeft = o.get("invPanelLeft").getAsBoolean();
 			if (o.has("autoUpdate")) autoUpdate = o.get("autoUpdate").getAsBoolean();
 			if (o.has("shardProfitOnly")) shardProfitOnly = o.get("shardProfitOnly").getAsBoolean();
 			earnHudCorner = str(o, "earnHudCorner", earnHudCorner, "top-left", "top-right", "middle-left");
@@ -300,6 +303,7 @@ public final class Settings {
 			o.addProperty("orderHud", orderHud);
 			o.addProperty("earnHud", earnHud);
 			o.addProperty("invPanel", invPanel);
+			o.addProperty("invPanelLeft", invPanelLeft);
 			o.addProperty("autoUpdate", autoUpdate);
 			o.addProperty("shardProfitOnly", shardProfitOnly);
 			o.addProperty("earnHudCorner", earnHudCorner);

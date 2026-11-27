@@ -97,6 +97,11 @@ public class SettingsScreen extends BaseScreen {
 		items.add(Item.cycle("Outbid chat alerts", () -> onOff(Settings.orderAlerts),
 				"A chat message when one of your bazaar orders is outbid or undercut (also on the Orders tab).",
 				d -> Settings.orderAlerts = !Settings.orderAlerts));
+		items.add(Item.heading("Inventory", "The Worth button and panel beside your inventory (E)."));
+		items.add(Item.cycle("Worth panel side", () -> Settings.invPanelLeft ? "Left" : "Right",
+				"Which side of your inventory the Worth button and panel go on. Switch it if another mod draws on that side "
+						+ "(if there's no room on the side you pick, the panel uses the other one).",
+				d -> Settings.invPanelLeft = !Settings.invPanelLeft));
 		items.add(Item.heading("Earnings", "The coins you really made, from Hypixel's bazaar chat messages (the Earnings tab)."));
 		items.add(Item.cycle("Session profit box", () -> onOff(Settings.earnHud),
 				"A small box on your screen with this session's bazaar profit and coins per hour. It shows once you've bought or sold on the bazaar.",

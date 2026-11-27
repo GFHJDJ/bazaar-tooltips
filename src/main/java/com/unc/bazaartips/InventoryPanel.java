@@ -49,11 +49,18 @@ final class InventoryPanel {
 		return Component.literal(Settings.invPanel ? "Hide" : "Worth");
 	}
 
-	/** Just above the inventory's top-left corner. */
+	/** Beside the inventory's top corner, on the side the gear says (left by default); above the corner if there's no room. */
 	private static void place(InventoryScreen inv, Button b) {
 		int[] r = bounds(inv);
-		b.setX(r[0]);
-		b.setY(Math.max(0, r[1] - BUTTON_H - 2));
+		boolean left = Settings.invPanelLeft;
+		int x = left ? r[0] - BUTTON_W - 4 : r[0] + r[2] + 4;
+		if (x < 2 || x + BUTTON_W > inv.width - 2) {         // no room beside it: just above the corner instead
+			b.setX(left ? r[0] : r[0] + r[2] - BUTTON_W);
+			b.setY(Math.max(0, r[1] - BUTTON_H - 2));
+			return;
+		}
+		b.setX(x);
+		b.setY(r[1]);
 	}
 
 	// ---- where the inventory is drawn ----
@@ -174,10 +181,14 @@ final class InventoryPanel {
 		Font font = Minecraft.getInstance().font;
 		int[] r = bounds(inv);
 		int rightX = r[0] + r[2] + 4, rightRoom = inv.width - rightX - 4, leftRoom = r[0] - 8;
-		int room = Math.max(rightRoom, leftRoom);
+		// the side the gear says (left by default); the other side only if that one has no room
+		boolean left = Settings.invPanelLeft ? leftRoom >= 110 || rightRoom < 110 : rightRoom < 110 && leftRoom >= 110;
+		int room = left ? leftRoom : rightRoom;
 		if (room < 110) return;                               // no room at this GUI scale
 		int w = Math.min(room, 200);
-		int x = rightRoom >= leftRoom ? rightX : r[0] - 4 - w;
-		Overlays.panel(g, font, x, r[1], w, lines(), inv.height - 4, Colors.PANEL_SOLID, true);
+		int x = left ? r[0] - 4 - w : rightX;
+		boolean beside = Settings.invPanelLeft == left && (left ? r[0] - BUTTON_W - 4 >= 2 : rightX + BUTTON_W <= inv.width - 2);
+		int y = beside ? r[1] + BUTTON_H + 3 : r[1];          // under the Worth button when it sits on this side
+		Overlays.panel(g, font, x, y, w, lines(), inv.height - 4, Colors.PANEL_SOLID, true);
 	}
 }
